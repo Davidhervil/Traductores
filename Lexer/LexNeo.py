@@ -1,8 +1,6 @@
 # ------------------------------------------------------------
 # calclex.py
 #
-# RECOMENDACION VER EJEMPLO DE >>>>>>> http://www.dabeaz.com/ply/example.html
-#
 # tokenizer for a simple expression evaluator for
 # numbers and +,-,*,/
 # ------------------------------------------------------------
@@ -14,10 +12,10 @@ tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 ,'TkAsignacion','TkSuma','TkResta','TkMult','TkDiv','TkMod','TkConjuncion',\
 'TkDisyuncion','TkNegacion','TkMenor','TkMenorIgual','TkMayor','TkMayorIgual'\
 ,'TkIgual','TkSiguienteCar','TkAnteriorCar','TkValorAscii','TkConcatenacion',\
-'TkRotacion','TkTrasposicion''TkNum','TkBegin','TkID','TkTrue','TkFalse',\
+'TkRotacion','TkTrasposicion''TkNum','TkBegin','TkId','TkTrue','TkFalse',\
 'TkCaracter','TkWhile','TkIf','TkWith','TkVar','TkEnd','TkInt','TkChar',\
 'TkBool','TkOf','TkMatrix','TkOtherwise','TkFor','TkFrom','TkTo','TkStep',\
-'TkRead','TkPrint','TkNot')
+'TkRead','TkPrint')
 
 # Regular expression rules for simple tokens
 t_TkComa = r','
@@ -36,6 +34,23 @@ t_TkResta = r'-'
 t_TkMult = r'\*'
 t_TkDiv = r'/'
 t_TkMod = r'\%'
+t_TkConjuncion = r'/\\'
+t_TkDisyuncion = r'\\/'
+t_TkNegacion = r'not'
+t_TkMenor = r'\<'
+t_TkMenorIgual = r'\<='
+t_TkMayor = r'\>'
+t_TkMayorIgual = r'\>='
+t_TkIgual = r'='
+t_TkSiguienteCar = r'\+\+'
+t_TkAnteriorCar = r'--'
+t_TkValorAscii = r'#'
+t_TkConcatenacion = '\:\:'
+t_TkRotacion = r'\$'
+t_TkTraspocicion = r'\?'
+
+
+
 
 # A regular expression rule with some action code
 def t_NUMBER(t):
