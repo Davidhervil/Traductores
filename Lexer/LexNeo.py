@@ -1,9 +1,12 @@
 # ------------------------------------------------------------
 # calclex.py
 #
+# RECOMENDACION VER EJEMPLO DE >>>>>>> http://www.dabeaz.com/ply/example.html
+#
 # tokenizer for a simple expression evaluator for
 # numbers and +,-,*,/
 # ------------------------------------------------------------
+
 import ply.lex as lex
 
 # List of token names.   This is always required
@@ -17,6 +20,12 @@ tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkBool','TkOf','TkMatrix','TkOtherwise','TkFor','TkFrom','TkTo','TkStep',\
 'TkRead','TkPrint')
 
+reservados = {"+":'TkSuma' , "-":'TkResta' , "*":'TkMult' , '/':'TkDiv', '%':'TkMod' , "/\\":'TkConjuncion' ,\
+ "\/":':TkDisyuncion' , "not":'TkNegacion' , "<":'TkMenor', "<=":'TkMenorIgual' , ">":'TkMayor', ">=":'TkMayorIgual'\
+, "=":'TkIgual', "++":'TkSiguienteCar' , "-":'TkAnteriorCar' , "#":'TkValorAscii', "::":'TkConcatenacion',\
+ "$":'TkRotacion', "?":'TkTrasposicion',"begin":"TkBegin"}
+
+
 # Regular expression rules for simple tokens
 t_TkComa = r','
 t_TkPunto = r'\.'
@@ -27,7 +36,7 @@ t_TkCorcheteAbre = r'\['
 t_TkCorcheteCierra = r'\]'
 t_TkLlaveAbre = r'\{'
 t_TkLlaveCierra = r'\}'
-t_TkHacer = r'-\>'
+t_TkHacer = r'hacer'
 t_TkAsignacion = r'\<-'
 t_TkSuma = r'\+'
 t_TkResta = r'-'
@@ -36,7 +45,7 @@ t_TkDiv = r'/'
 t_TkMod = r'\%'
 t_TkConjuncion = r'/\\'
 t_TkDisyuncion = r'\\/'
-t_TkNegacion = r'\Anot$'
+t_TkNegacion = r'not'
 t_TkMenor = r'\<'
 t_TkMenorIgual = r'\<='
 t_TkMayor = r'\>'
@@ -49,45 +58,42 @@ t_TkConcatenacion = '\:\:'
 t_TkRotacion = r'\$'
 t_TkTrasposicion = r'\?'
 t_TkNum = r'\d+'  ####################chequear funcion
-t_TkBegin = r'\Abegin$'
+#t_TkBegin = r'begin'
 t_TkId = r'[a-zA-Z][a-zA-Z0-9_]*'
-t_TkTrue = r'\ATrue$'
-t_TkFalse = r'\AFalse$'
-t_TkCaracter = r'\'(.|\\\w)\''
-t_TkVar = r'var'
-
-
-
+t_TkTrue = r'True'
+t_TkFalse = r'False'
+t_TkCaracter = r'\'[a-zA-Z]\''
 
 # A regular expression rule with some action code
-#def t_NUMBER(t):
-#    r'\d+'
-#    t.value = int(t.value)    
-#    return t
-
 # Define a rule so we can track line numbers
+def t_TkBegin(t):
+    r'begin'
+    t.type = reservados.get(t.value,'TkBegin')
+    return t 
+
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
 
 # A string containing ignored characters (spaces and tabs)
-t_ignore  = ' \t'
 
 # Error handling rule
 def t_error(t):
     print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
-import ply.lex as lex
-# Build the lexer
-lexer = lex.lex()
-f = open('flojera.txt','r')
-content= f.read()
-lexer.input(content)
 
-# Tokenize
+# Build the lexer
+t_ignore  = ' \t'
+
+content = '''
+begin23 begin hola vale
+3 + 4 * 10
+  + -20 *2
+'''
+lexer = lex.lex()
+lexer.input(content)
 while True:
     tok = lexer.token()
     if not tok: 
         break      # No more input
     print(tok)
-
