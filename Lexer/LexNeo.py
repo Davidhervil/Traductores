@@ -50,13 +50,20 @@ t_TkRotacion = r'\$'
 t_TkTrasposicion = r'\?'
 t_TkNum = r'\d+'  ####################chequear funcion
 t_TkBegin = r'\Abegin$'
-t_TkId = r'(?!(begin|with|var|end|while|if|int|char|bool|of|matrix|otherwise|for|from|to|step|print|read))[a-zA-Z0-9]+'
+t_TkId = r'(?!(begin|with|var|end|while|if|int|char|bool|of|matrix|otherwise|for|from|to|step|print|read|int|char))[a-zA-Z0-9]+'
 t_TkTrue = r'\ATrue$'
 t_TkFalse = r'\AFalse$'
 t_TkCaracter = r'\'(.|\\\w)\''
 t_TkVar = r'var'
 t_TkWith = r'with'
 t_TkInt = r'int'
+t_TkWhile = r'while'
+t_TkIf = r'if'
+t_TkEnd = r'end'
+t_TkChar = r'char'
+
+
+
 
 
 
@@ -73,7 +80,7 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 # A string containing ignored characters (spaces and tabs)
-t_ignore  = ' \t'
+t_ignore  = '([ \t]*%{[.\n]*})'
 
 # Error handling rule
 def t_error(t):
