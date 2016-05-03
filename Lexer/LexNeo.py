@@ -50,11 +50,13 @@ t_TkRotacion = r'\$'
 t_TkTrasposicion = r'\?'
 t_TkNum = r'\d+'  ####################chequear funcion
 t_TkBegin = r'\Abegin$'
-t_TkId = r'[a-zA-Z][a-zA-Z0-9_]*'
+t_TkId = r'(?!(begin|with|var|end|while|if|int|char|bool|of|matrix|otherwise|for|from|to|step|print|read))[a-zA-Z0-9]+'
 t_TkTrue = r'\ATrue$'
 t_TkFalse = r'\AFalse$'
 t_TkCaracter = r'\'(.|\\\w)\''
 t_TkVar = r'var'
+t_TkWith = r'with'
+t_TkInt = r'int'
 
 
 
