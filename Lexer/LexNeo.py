@@ -12,7 +12,7 @@ tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 ,'TkAsignacion','TkSuma','TkResta','TkMult','TkDiv','TkMod','TkConjuncion',\
 'TkDisyuncion','TkNegacion','TkMenor','TkMenorIgual','TkMayor','TkMayorIgual'\
 ,'TkIgual','TkSiguienteCar','TkAnteriorCar','TkValorAscii','TkConcatenacion',\
-'TkRotacion','TkTrasposicion''TkNum','TkBegin','TkId','TkTrue','TkFalse',\
+'TkRotacion','TkTrasposicion','TkNum','TkBegin','TkId','TkTrue','TkFalse',\
 'TkCaracter','TkWhile','TkIf','TkWith','TkVar','TkEnd','TkInt','TkChar',\
 'TkBool','TkOf','TkMatrix','TkOtherwise','TkFor','TkFrom','TkTo','TkStep',\
 'TkRead','TkPrint')
@@ -26,7 +26,7 @@ t_TkParCierra = r'\)'
 t_TkCorcheteAbre = r'\['
 t_TkCorcheteCierra = r'\]'
 t_TkLlaveAbre = r'\{'
-t_TkLLaveCierra = r'\}'
+t_TkLlaveCierra = r'\}'
 t_TkHacer = r'hacer'
 t_TkAsignacion = r'\<-'
 t_TkSuma = r'\+'
@@ -44,19 +44,25 @@ t_TkMayorIgual = r'\>='
 t_TkIgual = r'='
 t_TkSiguienteCar = r'\+\+'
 t_TkAnteriorCar = r'--'
-t_TkValorAscii = r'#'
+t_TkValorAscii = r'\#'
 t_TkConcatenacion = '\:\:'
 t_TkRotacion = r'\$'
-t_TkTraspocicion = r'\?'
+t_TkTrasposicion = r'\?'
+t_TkNum = r'\d+'  ####################chequear funcion
+t_TkBegin = r'begin'
+t_TkId = r'[a-zA-Z][a-zA-Z0-9_]*'
+t_TkTrue = r'True'
+t_TkFalse = r'False'
+t_TkCaracter = r'\'[a-zA-Z]\''
 
 
 
 
 # A regular expression rule with some action code
-def t_NUMBER(t):
-    r'\d+'
-    t.value = int(t.value)    
-    return t
+#def t_NUMBER(t):
+#    r'\d+'
+#    t.value = int(t.value)    
+#    return t
 
 # Define a rule so we can track line numbers
 def t_newline(t):
