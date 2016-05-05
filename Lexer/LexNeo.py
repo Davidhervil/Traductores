@@ -6,9 +6,9 @@
 # tokenizer for a simple expression evaluator for
 # numbers and +,-,*,/
 # ------------------------------------------------------------
-
+from __future__ import print_function
 import ply.lex as lex
-
+COLUMNA = [1]
 # List of token names.   This is always required
 tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkCorcheteAbre','TkCorcheteCierra','TkLlaveAbre','TkLlaveCierra','TkHacer'\
@@ -20,7 +20,10 @@ tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkBool','TkOf','TkMatrix','TkOtherwise','TkFor','TkFrom','TkTo','TkStep',\
 'TkRead','TkPrint')
 
-reservados = {"not":'TkNegacion',"begin":"TkBegin","with":"TkWith"}
+reservados = {'not':'TkNegacion','begin':'TkBegin','with':'TkWith','True':'TkTrue',\
+'False':'TkFalse','while':'TkWhile','if':'TkIf','var':'TkVar','end':'TkEnd','int':'TkInt',\
+'char':'TkChar','bool':'TkBool','of':'TkOf','matrix':'TkMatrix','otherwise':'TkOtherwise',\
+'for':'TkFor','from':'TkFrom','to':'TkTo','step':'TkStep','print':'TkPrint','read':'TkRead'}
 
 
 # Regular expression rules for simple tokens
@@ -42,7 +45,6 @@ t_TkDiv = r'/'
 t_TkMod = r'\%'
 t_TkConjuncion = r'/\\'
 t_TkDisyuncion = r'\\/'
-t_TkNegacion = r'not'
 t_TkMenor = r'\<'
 t_TkMenorIgual = r'\<='
 t_TkMayor = r'\>'
@@ -55,26 +57,122 @@ t_TkConcatenacion = '\:\:'
 t_TkRotacion = r'\$'
 t_TkTrasposicion = r'\?'
 t_TkNum = r'\d+'  ####################chequear funcion
-t_TkId = r'[a-zA-Z][a-zA-Z0-9_]*'
-t_TkTrue = r'True'
-t_TkFalse = r'False'
 t_TkCaracter = r'\'(.|\\\w)\''
 # A regular expression rule with some action code
 # Define a rule so we can track line numbers
+
+def t_TkId(t):
+    r'[a-zA-Z][a-zA-Z0-9_]*'
+    t.type = reservados.get(t.value,'TkId')
+    return t
+
 def t_TkBegin(t):
-    r'begin'
+    r'begin\Z'
     t.type = reservados.get(t.value,'TkBegin')
     return t 
 
 def t_TkWith(t):
-    r'with'
+    r'with\Z'
     t.type = reservados.get(t.value,'TkWith')
     return t 
+
+def t_TkNegacion(t):
+    r'not\Z'
+    t.type = reservados.get(t.value,'TkNegacion')
+    return t
+
+def t_TkTrue(t):
+    r'True\Z'
+    t.type = reservados.get(t.value,'TkTrue')
+    return t 
+
+def t_TkFalse(t):
+    r'False\Z'
+    t.type = reservados.get(t.value,'TkFalse')
+    return t 
+
+def t_TkWhile(t):
+    r'while\Z'
+    t.type = reservados.get(t.value,'TkWhile')
+    return t 
+def t_TkIf(t):
+    r'if\Z'
+    t.type = reservados.get(t.value,'TkIf')
+    return t 
+
+def t_TkVar(t):
+    r'var\Z'
+    t.type = reservados.get(t.value,'TkVar')
+    return t 
+def t_TkEnd(t):
+    r'end\Z'
+    t.type = reservados.get(t.value,'TkEnd')
+    return t 
+
+def t_TkInt(t):
+    r'int\Z'
+    t.type = reservados.get(t.value,'TkInt')
+    return t
+
+def t_TkChar(t):
+    r'char\Z'
+    t.type = reservados.get(t.value,'TkChar')
+    return t 
+
+def t_TkBool(t):
+    r'bool\Z'
+    t.type = reservados.get(t.value,'TkBool')
+    return t  
+
+def t_TkOf(t):
+    r'of\Z'
+    t.type = reservados.get(t.value,'TkOf')
+    return t 
+
+def t_TkMatrix(t):
+    r'matrix\Z'
+    t.type = reservados.get(t.value,'TkMatrix')
+    return t
+
+def t_TkOtherwise(t):
+    r'otherwise\Z'
+    t.type = reservados.get(t.value,'TkOtherwise')
+    return t 
+
+def t_TkFor(t):
+    r'for\Z'
+    t.type = reservados.get(t.value,'TkFor')
+    return t 
+
+def t_TkFrom(t):
+    r'from\Z'
+    t.type = reservados.get(t.value,'TkFrom')
+    return t 
+
+def t_TkTo(t):
+    r'to\Z'
+    t.type = reservados.get(t.value,'TkTo')
+    return t 
+
+def t_TkStep(t):
+    r'step\Z'
+    t.type = reservados.get(t.value,'TkStep')
+    return t 
+
+def t_TkRead(t):
+    r'read\Z'
+    t.type = reservados.get(t.value,'TkRead')
+    return t 
+
+def t_TkPrint(t):
+    r'print\Z'
+    t.type = reservados.get(t.value,'TkPrint')
+    return t
 
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-
+    COLUMNA[0]=1
 # A string containing ignored characters (spaces and tabs)
 
 # Error handling rule
@@ -83,19 +181,37 @@ def t_error(t):
     t.lexer.skip(1)
 
 # Build the lexer
-t_ignore  = ' \t'
+#t_ignore = ' \t'
+def t_tab(t):
+    r'\t+'
+    pass
 
-content = '''
-begin23 begin hola vale
+def t_espacio(t):
+    r'\s+'
+    pass
+
+contenido = '''
+begin23 begin beginbegin with begin\n
+var huehuehue
 3 + 4 * 10
   + -20 *2
 '''
 f = open("flojera.txt",'r')
-content = f.read()
+#contenido = f.read()
 lexer = lex.lex()
-lexer.input(content)
+#lexer.input(contenido)
 while True:
-    tok = lexer.token()
-    if not tok: 
-        break      # No more input
-    print(tok)
+    for lines in f.readlines():
+        lexer.input(lines)
+        while True:
+            tok = lexer.token()
+            if not tok: 
+                break      # No more input
+            if(tok.type=="TkId"):
+                print(str(tok.type) +"(\"" +tok.value+ "\") "+str(tok.lineno)+" "+ str(tok.lexpos)+", ",end="")
+            elif(tok.type=="TkNum"):
+                print(str(tok.type) +"(" +tok.value+ ") "+str(tok.lineno)+" "+ str(tok.lexpos)+", ",end="")
+            else:
+                print(str(tok.type) +" "+ str(tok.lineno)+" "+str(tok.lexpos+COLUMNA[0])+", ",end="")
+        print('')
+    break
