@@ -8,7 +8,7 @@
 # ------------------------------------------------------------
 from __future__ import print_function
 import ply.lex as lex
-COLUMNA = [1]
+COLUMNA = [0,0]
 # List of token names.   This is always required
 tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkCorcheteAbre','TkCorcheteCierra','TkLlaveAbre','TkLlaveCierra','TkHacer'\
@@ -172,7 +172,8 @@ def t_TkPrint(t):
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-    COLUMNA[0]=1
+    COLUMNA[0]=0
+    COLUMNA[1] = 0
 # A string containing ignored characters (spaces and tabs)
 
 # Error handling rule
@@ -182,13 +183,15 @@ def t_error(t):
 
 # Build the lexer
 #t_ignore = ' \t'
+
 def t_tab(t):
     r'\t+'
-    pass
-
+    #COLUMNA[0] = (COLUMNA[0] // 4)*4 + 1*(COLUMNA[0]%4==3) + 2*(COLUMNA[0]%4==2) + 3*(COLUMNA[0]%4==1) -1*(COLUMNA[0]%4!=0) 
+    COLUMNA[0] += 4-(((t.lexpos + COLUMNA[0]) )%4)
+    COLUMNA[1] = 0
 def t_espacio(t):
     r'\s+'
-    pass
+    COLUMNA[1] = 1
 
 contenido = '''
 begin23 begin beginbegin with begin\n
@@ -208,10 +211,10 @@ while True:
             if not tok: 
                 break      # No more input
             if(tok.type=="TkId"):
-                print(str(tok.type) +"(\"" +tok.value+ "\") "+str(tok.lineno)+" "+ str(tok.lexpos)+", ",end="")
+                print(str(tok.type) +"(\"" +tok.value+ "\") "+str(tok.lineno)+" "+ str(tok.lexpos+COLUMNA[0]+COLUMNA[1])+", ",end="")
             elif(tok.type=="TkNum"):
-                print(str(tok.type) +"(" +tok.value+ ") "+str(tok.lineno)+" "+ str(tok.lexpos)+", ",end="")
-            else:
-                print(str(tok.type) +" "+ str(tok.lineno)+" "+str(tok.lexpos+COLUMNA[0])+", ",end="")
+                print(str(tok.type) +"(" +tok.value+ ") "+str(tok.lineno)+" "+ str(tok.lexpos+COLUMNA[0]+COLUMNA[1])+", ",end="")
+            elif tok.type != "tab" and tok.type != "espacio":
+                print(str(tok.type) +" "+ str(tok.lineno)+" "+str(tok.lexpos+COLUMNA[0]+COLUMNA[1])+", ",end="")
         print('')
     break
