@@ -1,15 +1,25 @@
 # ------------------------------------------------------------
-# calclex.py
+# LexNeo.py
 #
-# RECOMENDACION VER EJEMPLO DE >>>>>>> http://www.dabeaz.com/ply/example.html
-#
-# tokenizer for a simple expression evaluator for
-# numbers and +,-,*,/
+# Autores:
+#   Arturo Toro
+#   David Hernandez
 # ------------------------------------------------------------
 from __future__ import print_function
 import ply.lex as lex
-COLUMNA = [0,1,0]
-# List of token names.   This is always required
+import sys
+CORRECCION = [0,1,0,0]  #Variable auxiliar cuyas posiciones permiten ajustar el filtrado de contenido
+                        #    Posiciones:
+                        #       0 Cantidad de espacios a correr debido a las tabulaciones
+                        #       1 Espacio individual a sumar
+                        #       2 Booleano auxiliar que permite saber si se esta dentro de un comentario
+                        #       3 Booleano auxiliar que permite saber si se detecto error en una linea
+
+apertura = [-1,-1]      #Variable auxiliar para guardar la posicion de la ultima apertura de
+                        #   comentario sin cerrar
+ajuste = [0,0]          #Variable auxiliar que permite guarar el ajuste por tabulaciones y espacios
+                        #   necesario para la ultima apertura de comentario sin cerrar
+# Lista de nombres de tokens.
 tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkCorcheteAbre','TkCorcheteCierra','TkLlaveAbre','TkLlaveCierra','TkHacer'\
 ,'TkAsignacion','TkSuma','TkResta','TkMult','TkDiv','TkMod','TkConjuncion',\
@@ -20,13 +30,14 @@ tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkBool','TkOf','TkMatrix','TkOtherwise','TkFor','TkFrom','TkTo','TkStep',\
 'TkRead','TkPrint','TkComenAbre','TkComenCierra','TkError')
 
+#Lista de palabras reservadas
 reservados = {'not':'TkNegacion','begin':'TkBegin','with':'TkWith','True':'TkTrue',\
 'False':'TkFalse','while':'TkWhile','if':'TkIf','var':'TkVar','end':'TkEnd','int':'TkInt',\
 'char':'TkChar','bool':'TkBool','of':'TkOf','matrix':'TkMatrix','otherwise':'TkOtherwise',\
 'for':'TkFor','from':'TkFrom','to':'TkTo','step':'TkStep','print':'TkPrint','read':'TkRead'}
     
 
-# Regular expression rules for simple tokens
+# Expresiones regulares para tokens simples
 t_TkComa = r','
 t_TkPunto = r'\.'
 t_TkDosPuntos = r'\:'
@@ -56,13 +67,13 @@ t_TkValorAscii = r'\#'
 t_TkConcatenacion = '\:\:'
 t_TkRotacion = r'\$'
 t_TkTrasposicion = r'\?'
-t_TkNum = r'\d+'  ####################chequear funcion
-t_TkCaracter = r'\'(.|\\\w)\''
+t_TkNum = r'\d+'  
+t_TkCaracter = r'\'(.|\\[a-zA-Z])\''
 t_TkComenAbre = r'\%\{'
 t_TkComenCierra = r'\}\%'
 t_ignore_linea = r'\%\%[^\n.]*'
-# A regular expression rule with some action code
-# Define a rule so we can track line numbers
+
+#Expresiones regulares que tienen asociados un metodo
 
 def t_TkId(t):
     r'[a-zA-Z][a-zA-Z0-9_]*'
@@ -172,67 +183,85 @@ def t_TkPrint(t):
     t.type = reservados.get(t.value,'TkPrint')
     return t
 
+#
 def t_newline(t):
+    #   Al ver un salto de linea incrementamos la cantidad de lineas y reiniciamos las tabulaciones
+    #   y espacios. Los espacios los colocamos en 1 puesto que el contador de columnas de PLY inicia en 0
     r'\n+'
     t.lexer.lineno += len(t.value)
-    COLUMNA[0]=0
-    COLUMNA[1] = 1
-# A string containing ignored characters (spaces and tabs)
+    CORRECCION[0]=0
+    CORRECCION[1] = 1
 
-# Error handling rule
+#   Manejo de Errores
 def t_error(t):
-    if(COLUMNA[2]==0):
-        print("Illegal character '%s'" % t.value[0])
+    if(CORRECCION[2]==0):
+        print("Error: Caracter inesperado '"+ str(t.value[0])+\
+            "' en la fila "+str(t.lineno+CORRECCION[0]+CORRECCION[1])+\
+            ", columna "+str(t.lexpos+CORRECCION[0]+CORRECCION[1]))
+    CORRECCION[3]=1
     t.lexer.skip(1)
 
 # Build the lexer
-#def t_ignore_comentariolinea(t):
-#    r'\%\%[^\n.]*'
-
 
 def t_tab(t):
+    # Cuando vemos un tabulador o mas, procuramos desplazar el numero de columnas al multiplo
+    #   mas 1 de 4 siguiente a la posicion actual acumulando este calculo segun la cantidad
+    #   de tabulaciones.
+    # El ajuste de tabulaciones hace necesario tener que reiniciar la posicion de espacios
+    #   de CORRECCION en 0 si no se ha leido tabulador, o dejarlo en 1 si no se ha leido alguno  
     r'\t+'
-    #COLUMNA[0] = (COLUMNA[0] // 4)*4 + 1*(COLUMNA[0]%4==3) + 2*(COLUMNA[0]%4==2) + 3*(COLUMNA[0]%4==1) -1*(COLUMNA[0]%4!=0) 
-    COLUMNA[0] = (4-(((t.lexpos + COLUMNA[0]) )%4))*len(t.value)-(len(t.value)-1)
-    COLUMNA[1] = 0
+    CORRECCION[0] = (4-(((t.lexpos + CORRECCION[0]) )%4))*len(t.value)-(len(t.value)-1)
+    CORRECCION[1] = 0
 def t_espacio(t):
     r'\s'
-    COLUMNA[1] = 0
+    if CORRECCION[0]==0:
+        CORRECCION[1] = 1
+    else:    
+        CORRECCION[1] = 0
 
-contenido = '''
-begin23 begin beginbegin with begin\n
-var huehuehue
-3 + 4 * 10
-  + -20 *2
-'''
-f = open("flojera.txt",'r')
-#contenido = f.read()
+try:
+    f = open(sys.argv[1],'r')
+except:
+    print("No se pudo abrir el archivo")
+    exit(0)
+#Construccion del lexer
 lexer = lex.lex()
-#lexer.input(contenido)
 
 while True:
-    COLUMNA[2] = 0
+    CORRECCION[2] = 0
     for lines in f.readlines():
         boole=True
+        salida=""
+        CORRECCION[3]=0
         lexer.input(lines)
         while True:
             tok = lexer.token()
             if not tok:
                 if(boole==False):
-                    print('')
+                    if(CORRECCION[3]!=1):
+                        salida[len(salida)-2]
+                        print(salida,end="")
+                        print('')
                 break      # No more input
             if(tok.type=="TkComenAbre"):
-                COLUMNA[2]=1
+                if(CORRECCION[2]==0):
+                    apertura[0] = tok.lineno
+                    apertura[1] = tok.lexpos
+                    ajuste[0] = CORRECCION[0]
+                    ajuste[1] = CORRECCION[1]
+                CORRECCION[2]=1
             elif(tok.type=="TkComenCierra"):
-                COLUMNA[2]=0
-            elif(COLUMNA[2]==0):
-                if(tok.type=="TkId"):
-                    print(str(tok.type) +"(\"" +tok.value+ "\") "+str(tok.lineno)+" "+ str(tok.lexpos+COLUMNA[0]+COLUMNA[1])+", ",end="")
+                CORRECCION[2]=0
+            elif(CORRECCION[2]==0):
+                if((tok.type=="TkId")):
+                    salida+=(str(tok.type) +"(\"" +tok.value+ "\") "+str(tok.lineno)+" "+ str(tok.lexpos+CORRECCION[0]+CORRECCION[1])+", ")
                     boole=False
-                elif(tok.type=="TkNum"):
+                elif((tok.type=="TkNum")| (tok.type=="TkCaracter")):
                     boole=False
-                    print(str(tok.type) +"(" +tok.value+ ") "+str(tok.lineno)+" "+ str(tok.lexpos+COLUMNA[0]+COLUMNA[1])+", ",end="")
+                    salida+=(str(tok.type) +"(" +tok.value+ ") "+str(tok.lineno)+" "+ str(tok.lexpos+CORRECCION[0]+CORRECCION[1])+", ")
                 elif tok.type != "tab" and tok.type != "espacio":
                     boole=False
-                    print(str(tok.type) +" "+ str(tok.lineno)+" "+str(tok.lexpos+COLUMNA[0]+COLUMNA[1])+", ",end="")
+                    salida+=(str(tok.type) +" "+ str(tok.lineno)+" "+str(tok.lexpos+CORRECCION[0]+CORRECCION[1])+", ")
     break
+if(CORRECCION[2]==1):
+    print("Error: EOF "+str(apertura[0])+" "+str(apertura[1]+ajuste[0]+ajuste[1]))
