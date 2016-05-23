@@ -20,6 +20,7 @@ apertura = [-1,-1]      #Variable auxiliar para guardar la posicion de la ultima
                         #   comentario sin cerrar
 ajuste = [0,0]          #Variable auxiliar que permite guarar el ajuste por tabulaciones y espacios
                         #   necesario para la ultima apertura de comentario sin cerrar
+salida=[]
 # Lista de nombres de tokens.
 tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkCorcheteAbre','TkCorcheteCierra','TkLlaveAbre','TkLlaveCierra','TkHacer'\
@@ -197,8 +198,10 @@ def t_newline(t):
 def t_error(t):
     if(CORRECCION[2]==0):
         print("Error: Caracter inesperado '"+ str(t.value[0])+\
-            "' en la fila "+str(t.lineno+CORRECCION[0]+CORRECCION[1])+\
+            "' en la fila "+str(t.lineno)+\
             ", columna "+str(t.lexpos+CORRECCION[0]+CORRECCION[1]))
+        print("Tabs: ", CORRECCION[0])
+        print("ColReal: ",t.lexpos)
     CORRECCION[3]=1
     t.lexer.skip(1)
 
@@ -231,18 +234,13 @@ lexer = lex.lex()
 while True:
     CORRECCION[2] = 0
     for lines in f.readlines():
-        boole=True
-        salida=""
+        salidaAux = ""
+        borde=0
         CORRECCION[3]=0
         lexer.input(lines)
         while True:
             tok = lexer.token()
             if not tok:
-                if(boole==False):
-                    if(CORRECCION[3]!=1):
-                        salida[len(salida)-2]
-                        print(salida,end="")
-                        print('')
                 break      # No more input
             if(tok.type=="TkComenAbre"):
                 if(CORRECCION[2]==0):
@@ -253,16 +251,22 @@ while True:
                 CORRECCION[2]=1
             elif(tok.type=="TkComenCierra"):
                 CORRECCION[2]=0
+                borde = CORRECCION[0]
             elif(CORRECCION[2]==0):
                 if((tok.type=="TkId")):
-                    salida+=(str(tok.type) +"(\"" +tok.value+ "\") "+str(tok.lineno)+" "+ str(tok.lexpos+CORRECCION[0]+CORRECCION[1])+", ")
-                    boole=False
+                    salidaAux+=(str(tok.type) +"(\"" +tok.value+ "\") "+str(tok.lineno)+" "+ str(tok.lexpos+borde+CORRECCION[0]+CORRECCION[1])+", ")
                 elif((tok.type=="TkNum")| (tok.type=="TkCaracter")):
-                    boole=False
-                    salida+=(str(tok.type) +"(" +tok.value+ ") "+str(tok.lineno)+" "+ str(tok.lexpos+CORRECCION[0]+CORRECCION[1])+", ")
+                    salidaAux+=(str(tok.type) +"(" +tok.value+ ") "+str(tok.lineno)+" "+ str(tok.lexpos+borde+CORRECCION[0]+CORRECCION[1])+", ")
                 elif tok.type != "tab" and tok.type != "espacio":
-                    boole=False
-                    salida+=(str(tok.type) +" "+ str(tok.lineno)+" "+str(tok.lexpos+CORRECCION[0]+CORRECCION[1])+", ")
+                    salidaAux+=(str(tok.type) +" "+ str(tok.lineno)+" "+str(tok.lexpos+borde+CORRECCION[0]+CORRECCION[1])+", ")
+
+        salida.append(salidaAux)
     break
+
+if(CORRECCION[3]==0):
+    for i in range(0,len(salida)):
+        if salida[i]!= "":
+            print(salida[i])
+
 if(CORRECCION[2]==1):
     print("Error: EOF "+str(apertura[0])+" "+str(apertura[1]+ajuste[0]+ajuste[1]))
