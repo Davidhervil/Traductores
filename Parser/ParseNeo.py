@@ -2,16 +2,16 @@ from LexNeo import tokens
 from LexNeo import reservados
 import ply.yacc as yacc
 
-start = 'Neo'
+start = 'NEO'
 precedence = (
     ('left', 'TkSuma', 'TkResta'),
     ('left', 'TkMult', 'TkDiv'),
     ('left','TkMod'),
-    ('right', 'TkUResta'),            # Unary minus operator
+    ('right', 'UTkResta'),            # Unary minus operator
 )
 
-def p_Neo(t):
-    '''Neo : TkWith LIST_DEC TkBegin INST TkEnd
+def p_NEO(t):
+    '''NEO : TkWith LIST_DEC TkBegin INST TkEnd
     	   | TkBegin INST TkEnd''' 
 
 def p_LIST_DEC(t):
@@ -47,20 +47,27 @@ def p_INST(t):
 
 def p_ASIG(t):
 	'''ASIG : TkId TkAsignacion EXPR TkPunto
-			| EXPR TkCorcheteAbre DIM TkCorcheteCierra TkAsignacion EXPR TkPunto'''
+			| INDEXMAT TkAsignacion EXPR TkPunto'''
 
 def p_INCALC(t):
 	'''INCALC : NEO'''
 
 def p_ENTRADASALIDA(t):
 	'''ENTRADASALIDA : TkPrint EXPR TkPunto
-					 | TkRead TkId TkPunto'''
+					 | TkRead EXPR TkPunto'''
 
 def p_SECUENC(t):
 	'''SECUENC : INST INST'''
 
 def p_EXPR(t):
-	'''EXPR : LITER'''
+	'''EXPR : LITER
+			| TkId
+			| TkParAbre EXPR TkParCierra
+			| EXPRARIT
+			| EXPRBOOL
+			| EXPRCAR
+			| EXPRMAT
+			| EXPRREL'''
 
 def p_LITER(t):
 	'''LITER : TkTrue
@@ -71,10 +78,47 @@ def p_LITER(t):
 
 def p_LITMAT(t):
 	'''LITMAT : TkLlaveAbre AUXLITMAT TkLlaveCierra
-			  | TkLlaveAbre TkLlaveCierra
-			  | EXPR'''
+			  | TkLlaveAbre TkLlaveCierra'''
 
 def p_AUXLITMAT(t):
-	'''AUXLITMAT : TkLlaveAbre TkLlaveCierra
-			  	 | EXPR''' 
-parser = yacc.yacc(start = 'Neo')
+	'''AUXLITMAT : EXPR TkComa AUXLITMAT
+			  	 | EXPR'''
+
+def p_EXPRARIT(t):
+	'''EXPRARIT : EXPR TkSuma EXPR
+				| EXPR TkResta EXPR
+				| EXPR TkDiv EXPR
+				| EXPR TkMult EXPR
+				| EXPR TkMod EXPR
+				| TkResta EXPR %prec UTkResta'''
+
+def p_EXPRBOOL(t):
+	'''EXPRBOOL : EXPR TkConjuncion EXPR
+				| EXPR TkDisyuncion EXPR
+				| TkNegacion EXPR'''
+
+def p_EXPRCAR(t):
+	'''EXPRCAR : EXPR TkSiguienteCar
+			   | EXPR TkAnteriorCar
+			   | TkValorAscii EXPR'''
+
+def p_EXPRMAT(t):
+	'''EXPRMAT : EXPR TkConcatenacion EXPR
+			   | TkRotacion EXPR
+			   | TkTrasposicion EXPR
+			   | INDEXMAT'''
+
+def p_INDEXMAT (t):
+	'''INDEXMAT : EXPR TkCorcheteAbre DIM TkCorcheteCierra'''
+
+def p_EXPRREL(t):
+	'''EXPRREL : EXPR TkMayor EXPR
+			   | EXPR TkMenor EXPR
+			   | EXPR TkMayorIgual EXPR
+			   | EXPR TkMenorIgual EXPR
+			   | EXPR TkDesigual EXPR'''
+
+def p_error(t):
+	print("Syntax error at '%s'" % t.value)
+
+parser = yacc.yacc(start = 'NEO')
