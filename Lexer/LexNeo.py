@@ -30,7 +30,7 @@ tokens = ('TkComa','TkPunto','TkDosPuntos','TkParAbre','TkParCierra',\
 'TkRotacion','TkTrasposicion','TkNum','TkBegin','TkId','TkTrue','TkFalse',\
 'TkCaracter','TkWhile','TkIf','TkWith','TkVar','TkEnd','TkInt','TkChar',\
 'TkBool','TkOf','TkMatrix','TkOtherwise','TkFor','TkFrom','TkTo','TkStep',\
-'TkRead','TkPrint','TkComenAbre','TkComenCierra','TkError')
+'TkRead','TkPrint','TkComenAbre','TkComenCierra','TkDesigual')
 
 #Lista de palabras reservadas
 reservados = {'not':'TkNegacion','begin':'TkBegin','with':'TkWith','True':'TkTrue',\
@@ -63,6 +63,7 @@ t_TkMenorIgual = r'\<='
 t_TkMayor = r'\>'
 t_TkMayorIgual = r'\>='
 t_TkIgual = r'='
+t_TkDesigual = r'/='
 t_TkSiguienteCar = r'\+\+'
 t_TkAnteriorCar = r'--'
 t_TkValorAscii = r'\#'
@@ -228,9 +229,11 @@ try:
 except:
     print("No se pudo abrir el archivo")
     exit(0)
+
 #Construccion del lexer
 lexer = lex.lex()
 
+"""
 while True:
     CORRECCION[2] = 0
     for lines in f.readlines():
@@ -263,10 +266,11 @@ while True:
         salida.append(salidaAux)
     break
 
-if(CORRECCION[3]==0):
+if(CORRECCION[3]==0 and CORRECCION[2]!=1):
     for i in range(0,len(salida)):
         if salida[i]!= "":
             print(salida[i])
 
 if(CORRECCION[2]==1):
     print("Error: EOF "+str(apertura[0])+" "+str(apertura[1]+ajuste[0]+ajuste[1]))
+"""
