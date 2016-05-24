@@ -4,15 +4,17 @@ import ply.yacc as yacc
 
 start = 'NEO'
 precedence = (
-    ('left', 'TkSuma', 'TkResta'),
-    ('left', 'TkMult', 'TkDiv'),
-    ('left','TkMod'),
-    ('right', 'UTkResta'),            # Unary minus operator
+    ('nonassoc','TkIgual','TkDesigual','TkMayor','TkMenor','TkMayorIgual','TkMenorIgual'),
+    ('left', 'TkSuma', 'TkResta','TkConcatenacion', 'TkDisyuncion'),
+    ('left', 'TkMult', 'TkDiv','TkConjuncion','TkRotacion'),
+    ('left','TkMod','TkSiguienteCar','TkAnteriorCar'),
+    ('right', 'UTkResta','TkNegacion','TkTrasposicion',), 
+    ('nonassoc','TkValorAscii')           # Unary minus operator
 )
 
 def p_NEO(t):
-    '''NEO : TkWith LIST_DEC TkBegin INST TkEnd
-    	   | TkBegin INST TkEnd''' 
+    '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
+    	   | TkBegin INSTGEN TkEnd''' 
 
 def p_LIST_DEC(t):
 	'''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
@@ -36,18 +38,22 @@ def p_LIST_IDEN(t):
 
 def p_INST(t):
 	'''INST : ASIG
-		    | TkIf EXPR TkHacer INST TkEnd
-			| TkIf EXPR TkHacer INST TkOtherwise TkHacer INST TkEnd
-			| TkFor TkId TkFrom EXPR TkTo EXPR TkHacer INST TkEnd
-			| TkFor TkId TkFrom EXPR TkTo EXPR TkStep EXPR TkHacer INST TkEnd
-			| TkWhile EXPR TkHacer INST TkEnd
+		    | CONDICIONAL
+			| TkFor TkId TkFrom EXPR TkTo EXPR TkHacer INSTGEN TkEnd
+			| TkFor TkId TkFrom EXPR TkTo EXPR TkStep EXPR TkHacer INSTGEN TkEnd
+			| TkWhile EXPR TkHacer INSTGEN TkEnd
 			| INCALC
-			| ENTRADASALIDA
-			| SECUENC'''
+			| ENTRADASALIDA'''
+
+def p_CONDICIONAL(t):
+	'''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
+
+def p_AUXCOND(t):
+	'''AUXCOND : TkEnd
+			   | TkOtherwise TkHacer INSTGEN TkEnd'''
 
 def p_ASIG(t):
-	'''ASIG : TkId TkAsignacion EXPR TkPunto
-			| INDEXMAT TkAsignacion EXPR TkPunto'''
+	'''ASIG : EXPR TkAsignacion EXPR TkPunto'''
 
 def p_INCALC(t):
 	'''INCALC : NEO'''
@@ -57,17 +63,38 @@ def p_ENTRADASALIDA(t):
 					 | TkRead EXPR TkPunto'''
 
 def p_SECUENC(t):
-	'''SECUENC : INST INST'''
+	'''SECUENC : INSTGEN INST'''
+
+def p_INSTGEN(t):
+	'''INSTGEN : SECUENC
+			   | INST'''
 
 def p_EXPR(t):
 	'''EXPR : LITER
 			| TkId
 			| TkParAbre EXPR TkParCierra
-			| EXPRARIT
-			| EXPRBOOL
-			| EXPRCAR
-			| EXPRMAT
-			| EXPRREL'''
+			| EXPR TkSuma EXPR
+			| EXPR TkResta EXPR
+			| EXPR TkDiv EXPR
+			| EXPR TkMult EXPR
+			| EXPR TkMod EXPR
+			| TkResta EXPR %prec UTkResta
+			| EXPR TkConjuncion EXPR
+			| EXPR TkDisyuncion EXPR
+			| TkNegacion EXPR
+			| EXPR TkSiguienteCar
+			| EXPR TkAnteriorCar
+			| TkValorAscii EXPR
+			| EXPR TkConcatenacion EXPR
+			| TkRotacion EXPR
+			| TkTrasposicion EXPR
+			| INDEXMAT
+			| EXPR TkMayor EXPR
+			| EXPR TkMenor EXPR
+			| EXPR TkMayorIgual EXPR
+			| EXPR TkMenorIgual EXPR
+			| EXPR TkDesigual EXPR
+			| EXPR TkIgual EXPR'''
 
 def p_LITER(t):
 	'''LITER : TkTrue
@@ -84,39 +111,8 @@ def p_AUXLITMAT(t):
 	'''AUXLITMAT : EXPR TkComa AUXLITMAT
 			  	 | EXPR'''
 
-def p_EXPRARIT(t):
-	'''EXPRARIT : EXPR TkSuma EXPR
-				| EXPR TkResta EXPR
-				| EXPR TkDiv EXPR
-				| EXPR TkMult EXPR
-				| EXPR TkMod EXPR
-				| TkResta EXPR %prec UTkResta'''
-
-def p_EXPRBOOL(t):
-	'''EXPRBOOL : EXPR TkConjuncion EXPR
-				| EXPR TkDisyuncion EXPR
-				| TkNegacion EXPR'''
-
-def p_EXPRCAR(t):
-	'''EXPRCAR : EXPR TkSiguienteCar
-			   | EXPR TkAnteriorCar
-			   | TkValorAscii EXPR'''
-
-def p_EXPRMAT(t):
-	'''EXPRMAT : EXPR TkConcatenacion EXPR
-			   | TkRotacion EXPR
-			   | TkTrasposicion EXPR
-			   | INDEXMAT'''
-
 def p_INDEXMAT (t):
 	'''INDEXMAT : EXPR TkCorcheteAbre DIM TkCorcheteCierra'''
-
-def p_EXPRREL(t):
-	'''EXPRREL : EXPR TkMayor EXPR
-			   | EXPR TkMenor EXPR
-			   | EXPR TkMayorIgual EXPR
-			   | EXPR TkMenorIgual EXPR
-			   | EXPR TkDesigual EXPR'''
 
 def p_error(t):
 	print("Syntax error at '%s'" % t.value)
