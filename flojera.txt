@@ -2,15 +2,15 @@
 with
 	var n <- 5 : int%%HAASOAJOSJAOSJOASJ ASAJSOAJS 	OHISKJSHKJSHSKJHSKJHSKJH
 	var m : matrix [2,n] of char
-begin%{HOLAAAAAAAAA HUEVO PELUDO !
+begin %{HOLAAAAAAAAA HUEVO PELUDO 
 	m[0,0] <- 'H'.
 	m[0,1] <- 'o'.
 	m[0,2] <- 'l'.
-	%}hola 	True
+	hola True}%
 	for i from 0   	to 2 ->
 		for j from 0 to n ->
 			print m[i,j].
 		end
 	end /
-	print {'!', '\n'}.
+	print {'!', '\n'}. 
 end
