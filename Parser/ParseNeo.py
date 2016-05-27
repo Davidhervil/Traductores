@@ -1,8 +1,6 @@
-from LexNeo import tokens
-from LexNeo import reservados
+from LexNeo import tokens,reservados,lexy
 import ply.yacc as yacc
-
-start = 'NEO'
+import sys
 precedence = (
     ('nonassoc','TkIgual','TkDesigual','TkMayor','TkMenor','TkMayorIgual','TkMenorIgual'),
     ('left', 'TkSuma', 'TkResta','TkConcatenacion', 'TkDisyuncion'),
@@ -15,6 +13,10 @@ precedence = (
 def p_NEO(t):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
     	   | TkBegin INSTGEN TkEnd''' 
+
+def p_empty(p):
+    '''empty :'''
+    pass
 
 def p_LIST_DEC(t):
 	'''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
@@ -31,10 +33,12 @@ def p_DIM(t):
 			| DIM TkComa EXPR'''
 
 def p_LIST_IDEN(t):
-	'''LIST_IDEN : TkId
-			     | TkId TkAsignacion EXPR
-			     | LIST_IDEN TkComa TkId
-			     | LIST_IDEN TkComa TkId TkAsignacion EXPR'''
+	'''LIST_IDEN : TkId OPASIG
+			     | LIST_IDEN TkComa TkId OPASIG'''
+
+def p_OPASIG(t):
+	'''OPASIG : TkAsignacion EXPR
+			  | empty'''
 
 def p_INST(t):
 	'''INST : ASIG
@@ -117,4 +121,12 @@ def p_INDEXMAT (t):
 def p_error(t):
 	print("Syntax error at '%s'" % t.value)
 
+try:
+    f = open(sys.argv[1],'r')
+except:
+    print("No se pudo abrir el archivo")
+    exit(0)
+#parser = yacc.yacc()
 parser = yacc.yacc(start = 'NEO')
+learcvhivo=f.read()
+parser.parse(learcvhivo,lexer=lexy)
