@@ -10,7 +10,7 @@ precedence = (
     ('nonassoc','TkValorAscii')           # Unary minus operator
 )
 
-def p_NEO(t):
+def p_NEO(p):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
     	   | TkBegin INSTGEN TkEnd''' 
 
@@ -18,29 +18,29 @@ def p_empty(p):
     '''empty :'''
     pass
 
-def p_LIST_DEC(t):
+def p_LIST_DEC(p):
 	'''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
 				| LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
 
-def p_TIPO(t):
+def p_TIPO(p):
 	'''TIPO : TkInt
 	     	| TkBool
 	      	| TkChar
 	     	| TkMatrix TkCorcheteAbre DIM TkCorcheteCierra TkOf TIPO'''
 
-def p_DIM(t):
+def p_DIM(p):
 	'''DIM  : EXPR
 			| DIM TkComa EXPR'''
 
-def p_LIST_IDEN(t):
+def p_LIST_IDEN(p):
 	'''LIST_IDEN : TkId OPASIG
 			     | LIST_IDEN TkComa TkId OPASIG'''
 
-def p_OPASIG(t):
+def p_OPASIG(p):
 	'''OPASIG : TkAsignacion EXPR
 			  | empty'''
 
-def p_INST(t):
+def p_INST(p):
 	'''INST : ASIG
 		    | CONDICIONAL
 			| TkFor TkId TkFrom EXPR TkTo EXPR TkHacer INSTGEN TkEnd
@@ -49,31 +49,31 @@ def p_INST(t):
 			| INCALC
 			| ENTRADASALIDA'''
 
-def p_CONDICIONAL(t):
+def p_CONDICIONAL(p):
 	'''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
 
-def p_AUXCOND(t):
+def p_AUXCOND(p):
 	'''AUXCOND : TkEnd
 			   | TkOtherwise TkHacer INSTGEN TkEnd'''
 
-def p_ASIG(t):
+def p_ASIG(p):
 	'''ASIG : EXPR TkAsignacion EXPR TkPunto'''
 
-def p_INCALC(t):
+def p_INCALC(p):
 	'''INCALC : NEO'''
 
-def p_ENTRADASALIDA(t):
+def p_ENTRADASALIDA(p):
 	'''ENTRADASALIDA : TkPrint EXPR TkPunto
 					 | TkRead EXPR TkPunto'''
 
-def p_SECUENC(t):
+def p_SECUENC(p):
 	'''SECUENC : INSTGEN INST'''
 
-def p_INSTGEN(t):
+def p_INSTGEN(p):
 	'''INSTGEN : SECUENC
 			   | INST'''
 
-def p_EXPR(t):
+def p_EXPR(p):
 	'''EXPR : LITER
 			| TkId
 			| TkParAbre EXPR TkParCierra
@@ -99,27 +99,31 @@ def p_EXPR(t):
 			| EXPR TkMenorIgual EXPR
 			| EXPR TkDesigual EXPR
 			| EXPR TkIgual EXPR'''
+	for t in p:
+		if(not (t is None)):
+			print(t)
 
-def p_LITER(t):
+def p_LITER(p):
 	'''LITER : TkTrue
 			 | TkFalse
 			 | TkNum
 			 | TkCaracter
 			 | LITMAT'''
 
-def p_LITMAT(t):
+def p_LITMAT(p):
 	'''LITMAT : TkLlaveAbre AUXLITMAT TkLlaveCierra
 			  | TkLlaveAbre TkLlaveCierra'''
 
-def p_AUXLITMAT(t):
+def p_AUXLITMAT(p):
 	'''AUXLITMAT : EXPR TkComa AUXLITMAT
 			  	 | EXPR'''
 
-def p_INDEXMAT (t):
+def p_INDEXMAT (p):
 	'''INDEXMAT : EXPR TkCorcheteAbre DIM TkCorcheteCierra'''
 
-def p_error(t):
-	print("Syntax error at '%s'" % t.value)
+def p_error(p):
+	print("Syntax error at '%s'" % p.value)
+	print(p.lineno)
 
 try:
     f = open(sys.argv[1],'r')
