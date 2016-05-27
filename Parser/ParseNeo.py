@@ -9,37 +9,107 @@ precedence = (
     ('right', 'UTkResta','TkNegacion','TkTrasposicion',), 
     ('nonassoc','TkValorAscii')           # Unary minus operator
 )
-
+class cNeo:
+	def __init__(self,lis_dec,insgen):
+		self.type = "NEO"
+		self.list_dec = lis_dec
+		self.instgen = insgen
+		self.arr = [self.list_dec,self.instgen]
 def p_NEO(p):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
     	   | TkBegin INSTGEN TkEnd''' 
+    if p[1] == 'with':
+    	p[0] = cNeo(p[2],p[4])
+    else:
+    	p[0] = cNeo(None,p[2])
+
 
 def p_empty(p):
     '''empty :'''
     pass
 
+class cList_Dec:
+	def __init__(self, lis_dec, lis_iden, tipo):
+		self.type = "LISTA DE DECLARACION"
+		self.list_dec = lis_dec
+		self.list_iden = lis_iden
+		self.tipo = tipo
+		self.arr = [self.list_dec,self.list_iden,self.tipo]
 def p_LIST_DEC(p):
 	'''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
 				| LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
+	if p[1] == 'var':
+		p[0] = cList_Dec(None,p[2],p[4])
+	else:
+		p[0] = cList_Dec(p[1],p[3],p[5])
 
+class cTipo:
+	def __init__(self,dim,tipo):
+		self.type = "Matriz"
+		self.dim = dim
+		self.tipo = tipo
+		self.arr = [self.dim,self.tipo]
 def p_TIPO(p):
 	'''TIPO : TkInt
 	     	| TkBool
 	      	| TkChar
 	     	| TkMatrix TkCorcheteAbre DIM TkCorcheteCierra TkOf TIPO'''
+	if len(p) == 2:
+		p[0] = p[1]
+	else:
+		p[0] = cTipo(p[1],p[3])
 
+
+class cDim:
+	def __init__(self,dim,expr):
+		self.type = "DIMENSION"
+		self.dim = dim
+		self.tipo = expr
 def p_DIM(p):
 	'''DIM  : EXPR
 			| DIM TkComa EXPR'''
+	if len(p) == 2:
+		p[0] = p[1]
+	else:
+		p[0] = cDim(p[1],p[3])
 
+
+class cList_Iden:
+	def __init__(self,lis_iden,opasig,ident):
+		self.type = "LISTA DE IDENTIFICADORES"
+		self.lis_iden = lis_iden
+		self.expr = opasig
+		self.ident = ident
+		self.arr = [self.lis_iden,self.expr,self.ident]
 def p_LIST_IDEN(p):
 	'''LIST_IDEN : TkId OPASIG
 			     | LIST_IDEN TkComa TkId OPASIG'''
+	if len(p) == 3:
+		p[0] = cList_Iden(None,p[2],p[1])
+	else:
+		p[0] = cList_Iden(p[1],p[4],p[3])
 
+class cOpasig:
+	def __init__(self,expr):
+		self.type = "OPASIG"
+		self.expr = expr
+		self.arr = [self.expr]
 def p_OPASIG(p):
 	'''OPASIG : TkAsignacion EXPR
 			  | empty'''
+	if len(p) == 3:
+		p[0] = cOpasig(p[2])
+	else:
+		p[0] = ""
 
+
+class cINST:
+	def __init__(self,tipoAux,ident,exp1,exp2,exp3,insgen):
+		self.type = tipoAux
+		self.identificador = ident
+		self.exp1 = exp1
+		self.exp2 = exp2
+		self.exp3 = exp3
 def p_INST(p):
 	'''INST : ASIG
 		    | CONDICIONAL
@@ -48,13 +118,40 @@ def p_INST(p):
 			| TkWhile EXPR TkHacer INSTGEN TkEnd
 			| INCALC
 			| ENTRADASALIDA'''
+	if len(p) == 2:
+		p[0] = p[1]
+	elif len(p) == 6:
+		p[0] = cINST("ciclo indefinido",None,None,None,p[2],p[4])
+	elif len(p) ==10:
+		p[0] = cINST("FOR",p[2],None,p[4],p[6],p[8])
+	else:
+		p[0] = cINST("FORconStep",p[2],p[4],p[6],p[8],p[10])
+
+class cCondicional:
+	def __init__(self,expr,instgen,auxcond):
+		self.type = "CONDICIONAL"
+		self.guardia = expr
+		self.instgen = instgen
+		self.other = auxcond
 
 def p_CONDICIONAL(p):
 	'''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
+	p[0] = cCondicional(p[2],p[4],p[5])
+
+class cAuxcond:
+	def __init__(self,insgen):
+		self.type = "Otherwise"
+		self.instgen = insgen
 
 def p_AUXCOND(p):
 	'''AUXCOND : TkEnd
 			   | TkOtherwise TkHacer INSTGEN TkEnd'''
+	if len(p)==2:
+
+		p[0] = p[1]
+	else:
+		p[0] = cAuxcond(p[3])
+
 
 def p_ASIG(p):
 	'''ASIG : EXPR TkAsignacion EXPR TkPunto'''
@@ -69,9 +166,11 @@ def p_ENTRADASALIDA(p):
 def p_SECUENC(p):
 	'''SECUENC : INSTGEN INST'''
 
+
 def p_INSTGEN(p):
 	'''INSTGEN : SECUENC
 			   | INST'''
+	p[0] = p[1]
 
 def p_EXPR(p):
 	'''EXPR : LITER
@@ -133,4 +232,18 @@ except:
 #parser = yacc.yacc()
 parser = yacc.yacc(start = 'NEO')
 learcvhivo=f.read()
-parser.parse(learcvhivo,lexer=lexy)
+result= parser.parse(learcvhivo,lexer=lexy)
+def imprimir(result):
+	print(result.type)
+	for elem in result.arr:
+		if elem:
+			print(elem)
+	for field in result.arr:
+		if field:
+			try:
+				if field.type:
+					imprimir(field)
+			except:
+				print(field)
+	print("Nivel ready")
+imprimir(result)
