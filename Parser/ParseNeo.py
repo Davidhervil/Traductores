@@ -330,15 +330,30 @@ def imprimir(result,i):
 	else:
 		print(i*" "+result.type)
 		if result.type == "FOR":
-			print((i+4)*" "+"ITERADOR: "+result.identificador)
-			print((i+4)*" "+"RANGO:")
-			imprimir(result.exp2,i+4+4)
-			print((i+4)*" "+"HASTA:")
-			imprimir(result.exp3,i+4+4)
-			print((i+4)*" "+"INSTRUCCION:")
-			imprimir(result.instgen,i+4+4)
+			print((i+2)*" "+"ITERADOR: "+result.identificador)
+			print((i+2)*" "+"RANGO:")
+			imprimir(result.exp2,i+2+2)
+			print((i+2)*" "+"HASTA:")
+			imprimir(result.exp3,i+2+2)
+			print((i+2)*" "+"INSTRUCCION:")
+			imprimir(result.instgen,i+2+2)
 			j = 0
 			ITERADOR[0] = 3 
+		elif result.type == "ASIGNACION":
+			print((i+2)*" "+"CONTENEDOR:")
+			imprimir(result.expr_izq,i+2+2)
+			print((i+2)*" "+"EXPRESION A ASIGNAR:")
+			imprimir(result.expr_der,i+2+2)
+			j = 0
+			ITERADOR[0] = 3
+		elif result.type == "Expresion Binaria":
+			print((i+2)*" "+"EXPRESION IZQ:")
+			imprimir(result.expr_izq,i+2+2)
+			print((i+2)*" "+"OPERADOR: "+result.oper)
+			print((i+2)*" "+"EXPRESION IZQ:")
+			imprimir(result.expr_der,i+2+2)
+			j = 0
+			ITERADOR[0] = 3  
 		else:
 			#print(i*" "+result.type)
 			j = i
@@ -346,10 +361,10 @@ def imprimir(result,i):
 				if elem:
 					if(isinstance(elem,str)):
 						print(j*" "+elem)
-						j = i + 4
+						j = i + 2
 					else:
 						if(elem.type):
-							imprimir(elem,i+4)
+							imprimir(elem,i+2)
 try:
 	imprimir(result,0)
 	print("end")
