@@ -135,6 +135,7 @@ class cCondicional:
 		self.guardia = expr
 		self.instgen = instgen
 		self.other = auxcond
+		self.arr = [self.guardia,self.instgen,self.other]
 
 def p_CONDICIONAL(p):
 	'''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
@@ -144,6 +145,7 @@ class cAuxcond:
 	def __init__(self,insgen):
 		self.type = "Otherwise"
 		self.instgen = insgen
+		self.arr = [self.instgen]
 
 def p_AUXCOND(p):
 	'''AUXCOND : TkEnd
@@ -168,6 +170,7 @@ class cIncAlc:
 	def __init__(self,param):
 		self.type = "INCORPORACION DE ALCANCE"
 		self.alc = param
+		self.arr = [self.alc]
 
 def p_INCALC(p):
 	'''INCALC : NEO'''
@@ -202,18 +205,27 @@ def p_INSTGEN(p):
 	p[0] = p[1]
 
 class cExprBin:
-	def __init__(self,expr_izq,oper,):
+	def __init__(self,expr_izq,oper,expr_der):
 		self.type = "Expresion Binaria"
 		self.expr_izq = expr_izq
-		if oper in {"+","-","*","/","%"}:
-			self.type = "Expresion Aritmetica"
-		elif oper in {"/\\","\\/"}:
-			self.type = "Expresion Booleana"
-		else:
-			pass #OJOOOJOJO
+		#if oper in {"+","-","*","/","%"}:
+		#	self.type = "Expresion Aritmetica"
+		#elif oper in {"/\\","\\/"}:
+		#	self.type = "Expresion Booleana"
+		#elif oper in {"::"}:
+		#	self.type = "Concatenacion Matrices"
+		#elif oper in {"<",">","<=",">=","=","/=",}:
+		#	self.type = "Expresion Relacional"
+		self.oper = oper
 		self.expr_der = expr_der
 		self.arr = [self.expr_izq,self.oper,self.expr_der]
 
+class cExprUn:
+	def __init__(self,expr,oper):
+		self.type = "Expresion Unaria"
+		self.oper = oper
+		self.expr = expr
+		self.arr = [self.oper, self.expr]
 
 def p_EXPR(p):
 	'''EXPR : LITER
@@ -244,6 +256,14 @@ def p_EXPR(p):
 
 	if len(p)==2:
 		p[0]=p[1]
+	elif len(p)==4:
+		if p[1]!="(":
+			p[0] = cExprBin(p[1],p[2],p[3])
+	elif len(p)==3 or (len(p)==4 and p[1]=="("):
+		if p[1]=="(":
+			p[0] = p[2]
+		else:
+			p[0] = cExprUn(p[1],p[2])
 
 def p_LITER(p):
 	'''LITER : TkTrue
@@ -270,6 +290,7 @@ def p_LITMAT(p):
 class cAuxLitMat:
 	def __init__(self,expr,auxlitmat):
 		self.val = expr + "," + auxlitmat
+		self.arr = [self.val]
 
 def p_AUXLITMAT(p):
 	'''AUXLITMAT : EXPR TkComa AUXLITMAT
@@ -284,7 +305,6 @@ class cIndexMat:
 		self.type = "Indexacion de Matrices"
 		self.mati = expr
 		self.indice = dim
-		self.valor = expr + "[" + dim.valor + "]"
 		self.arr = [self.mati,self.indice]
 
 def p_INDEXMAT (p):
