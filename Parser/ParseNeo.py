@@ -202,18 +202,24 @@ def p_INSTGEN(p):
 	p[0] = p[1]
 
 class cExprBin:
-	def __init__(self,expr_izq,oper,):
+	def __init__(self,expr_izq,oper,expr_der):
 		self.type = "Expresion Binaria"
 		self.expr_izq = expr_izq
-		if oper in {"+","-","*","/","%"}:
-			self.type = "Expresion Aritmetica"
-		elif oper in {"/\\","\\/"}:
-			self.type = "Expresion Booleana"
-		else:
-			pass #OJOOOJOJO
+		#if oper in {"+","-","*","/","%"}:
+		#	self.type = "Expresion Aritmetica"
+		#elif oper in {"/\\","\\/"}:
+		#	self.type = "Expresion Booleana"
+		#elif oper in {"::"}:
+		#	self.type = "Concatenacion Matrices"
+		#elif oper in {"<",">","<=",">=","=","/=",}:
+		#	self.type = "Expresion Relacional"
+		self.oper = oper
 		self.expr_der = expr_der
 		self.arr = [self.expr_izq,self.oper,self.expr_der]
 
+class cExprUn:
+	def __init__(self,expr):
+		self.type = "Expresion Unaria"
 
 def p_EXPR(p):
 	'''EXPR : LITER
@@ -241,12 +247,12 @@ def p_EXPR(p):
 			| EXPR TkMenorIgual EXPR
 			| EXPR TkDesigual EXPR
 			| EXPR TkIgual EXPR'''
-	for t in p:
-		if(not (t is None)):
-			print(t)
 
 	if len(p)==2:
 		p[0]=p[1]
+	elif len(p)==4:
+		if p[1]!="(":
+			p[0] = cExprBin(p[1],p[2],p[3])
 
 def p_LITER(p):
 	'''LITER : TkTrue
@@ -258,7 +264,7 @@ def p_LITER(p):
 
 class cLitMat:
 	def __init__(self,auxlitmat):
-		self.type = "Literl Matriz"
+		self.type = "Literal Matriz"
 		self.valor = "{" + auxlitmat + "}"
 		self.arr = [self.valor]
 
@@ -287,7 +293,6 @@ class cIndexMat:
 		self.type = "Indexacion de Matrices"
 		self.mati = expr
 		self.indice = dim
-		self.valor = expr + "[" + dim.valor + "]"
 		self.arr = [self.mati,self.indice]
 
 def p_INDEXMAT (p):
@@ -307,13 +312,34 @@ except:
 parser = yacc.yacc(start = 'NEO')
 learcvhivo=f.read()
 result= parser.parse(learcvhivo,lexer=lexy)
-def imprimir(result):
-	print(result.type)
+ITERADOR = [0]
+def imprimir(result,i):
+	if result.type == "FOR":
+		print(i*" "+result.type,end="")
+		j = 0
+		ITERADOR[0] = 3 
+	else:
+		print(i*" "+result.type)
+		j = i
 	for elem in result.arr:
 		if elem:
 			if(isinstance(elem,str)):
-				print(elem)
+				if ITERADOR[0] == 3 :
+					print(" Iterator: " + elem + " " ,end = "")
+					ITERADOR[0] = ITERADOR[0] - 1
+				elif ITERADOR[0] == 2:
+					print("Rango: " + elem + " to ",end = "")
+					ITERADOR[0] = ITERADOR[0] - 1
+				elif ITERADOR[0] == 1:
+					print(elem)
+					ITERADOR[0] = ITERADOR[0] - 1
+				else:
+					print(j*" "+elem)
+					j = i + 4
 			else:
-				imprimir(elem)
-
-imprimir(result)
+				imprimir(elem,i+4)
+try:
+	imprimir(result,0)
+	print("end")
+except:
+	pass
