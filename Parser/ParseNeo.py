@@ -111,7 +111,8 @@ class cINST:
 		self.exp1 = exp1
 		self.exp2 = exp2
 		self.exp3 = exp3
-		self.arr = [self.identificador,self.exp1,self.exp2,self.exp3]
+		self.instgen = insgen
+		self.arr = [self.identificador,self.exp1,self.exp2,self.exp3,self.instgen]
 def p_INST(p):
 	'''INST : ASIG
 		    | CONDICIONAL
@@ -254,14 +255,33 @@ def p_LITER(p):
 			 | TkNum
 			 | TkCaracter
 			 | LITMAT'''
+	p[0] = p[1]
+
+class cLitMat:
+	def __init__(self,auxlitmat):
+		self.type = "Literl Matriz"
+		self.valor = "{" + auxlitmat + "}"
+		self.arr = [self.valor]
 
 def p_LITMAT(p):
 	'''LITMAT : TkLlaveAbre AUXLITMAT TkLlaveCierra
 			  | TkLlaveAbre TkLlaveCierra'''
+	if len(p)==2:
+		p[0] = p[1] + p[2]
+	else:
+		p[0] = cLitMat(p[2])
+
+class cAuxLitMat:
+	def __init__(self,expr,auxlitmat):
+		self.val = expr + "," + auxlitmat
 
 def p_AUXLITMAT(p):
 	'''AUXLITMAT : EXPR TkComa AUXLITMAT
 			  	 | EXPR'''
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		p[0] = cAuxLitMat(p[1],p[3]).val
 
 def p_INDEXMAT (p):
 	'''INDEXMAT : EXPR TkCorcheteAbre DIM TkCorcheteCierra'''
@@ -287,6 +307,5 @@ def imprimir(result):
 				print(elem)
 			else:
 				imprimir(elem)
-	print("Nivel ready")
 
 imprimir(result)
