@@ -57,7 +57,7 @@ def p_TIPO(p):
 	if len(p) == 2:
 		p[0] = p[1]
 	else:
-		p[0] = cTipo(p[1],p[3])
+		p[0] = cTipo(p[3],p[6])
 
 
 class cDim:
@@ -65,6 +65,7 @@ class cDim:
 		self.type = "DIMENSION"
 		self.dim = dim
 		self.tipo = expr
+		self.arr = [self.dim,self.tipo]
 def p_DIM(p):
 	'''DIM  : EXPR
 			| DIM TkComa EXPR'''
@@ -110,6 +111,7 @@ class cINST:
 		self.exp1 = exp1
 		self.exp2 = exp2
 		self.exp3 = exp3
+		self.arr = [self.identificador,self.exp1,self.exp2,self.exp3]
 def p_INST(p):
 	'''INST : ASIG
 		    | CONDICIONAL
@@ -154,12 +156,13 @@ def p_AUXCOND(p):
 
 class cAsig:
 	def __init__(self,expr_izq,expr_der):
-		self.type = "AIGNACION"
+		self.type = "ASIGNACION"
 		self.expr_izq= expr_izq
 		self.expr_der = expr_der
+		self.arr = [self.expr_izq,self.expr_der]
 def p_ASIG(p):
 	'''ASIG : EXPR TkAsignacion EXPR TkPunto'''
-	p[0] = cAsig(p[1].p[3])
+	p[0] = cAsig(p[1],p[3])
 
 class cIncAlc:
 	def __init__(self,param):
@@ -175,6 +178,7 @@ class cEntSal:
 		self.type = "ENTRADA SALIDA"
 		self.expr = expr
 		self.io = io
+		self.arr = [self.expr, self.io]
 
 def p_ENTRADASALIDA(p):
 	'''ENTRADASALIDA : TkPrint EXPR TkPunto
@@ -182,10 +186,11 @@ def p_ENTRADASALIDA(p):
 	p[0] = cEntSal(p[1],p[2])
 
 class cSecu:
-	def __init__(self,insten,inst):
+	def __init__(self,instgen,inst):
 		self.type = "SECUENCIACION"
 		self.instgen = instgen
 		self.inst = inst
+		self.arr = [self.instgen,self.inst]
 
 def p_SECUENC(p):
 	'''SECUENC : INSTGEN INST'''
@@ -196,10 +201,19 @@ def p_INSTGEN(p):
 			   | INST'''
 	p[0] = p[1]
 
-class cEntSal:
-	def __init__(sel,type,expr):
-		self.type = type
-		self.
+class cExprBin:
+	def __init__(self,expr_izq,oper,):
+		self.type = "Expresion Binaria"
+		self.expr_izq = expr_izq
+		if oper in {"+","-","*","/","%"}:
+			self.type = "Expresion Aritmetica"
+		elif oper in {"/\\","\\/"}:
+			self.type = "Expresion Booleana"
+		else:
+			pass #OJOOOJOJO
+		self.expr_der = expr_der
+		self.arr = [self.expr_izq,self.oper,self.expr_der]
+
 
 def p_EXPR(p):
 	'''EXPR : LITER
@@ -230,6 +244,9 @@ def p_EXPR(p):
 	for t in p:
 		if(not (t is None)):
 			print(t)
+
+	if len(p)==2:
+		p[0]=p[1]
 
 def p_LITER(p):
 	'''LITER : TkTrue
@@ -266,13 +283,10 @@ def imprimir(result):
 	print(result.type)
 	for elem in result.arr:
 		if elem:
-			print(elem)
-	for field in result.arr:
-		if field:
-			try:
-				if field.type:
-					imprimir(field)
-			except:
-				print(field)
+			if(isinstance(elem,str)):
+				print(elem)
+			else:
+				imprimir(elem)
 	print("Nivel ready")
+
 imprimir(result)
