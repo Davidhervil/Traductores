@@ -304,18 +304,27 @@ except:
 parser = yacc.yacc(start = 'NEO')
 learcvhivo=f.read()
 result= parser.parse(learcvhivo,lexer=lexy)
+ITERADOR = [0]
 def imprimir(result,i):
 	if result.type == "FOR":
 		print(i*" "+result.type+" Iterator: ",end="")
 		j = 0
+		ITERADOR[0] = 2 
 	else:
 		print(i*" "+result.type)
 		j = i
 	for elem in result.arr:
 		if elem:
 			if(isinstance(elem,str)):
-				print(j*" "+elem)
-				j = i + 4
+				if ITERADOR[0] == 2 :
+					print("Rango: "+elem,end = "")
+					ITERADOR[0] = ITERADOR[0] - 1
+				elif ITERADOR[0] == 1:
+					print(" to "+elem)
+					ITERADOR[0] = ITERADOR[0] - 1
+				else:
+					print(j*" "+elem)
+					j = i + 4
 			else:
 				imprimir(elem,i+4)
 
