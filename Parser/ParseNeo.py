@@ -307,7 +307,7 @@ result= parser.parse(learcvhivo,lexer=lexy)
 ITERADOR = [0]
 def imprimir(result,i):
 	if result.type == "FOR":
-		print(i*" "+result.type+" Iterator: ",end="")
+		print(i*" "+result.type,end="")
 		j = 0
 		ITERADOR[0] = 3 
 	else:
@@ -317,7 +317,7 @@ def imprimir(result,i):
 		if elem:
 			if(isinstance(elem,str)):
 				if ITERADOR[0] == 3 :
-					print("Iterator: " + elem + " " ,end = "")
+					print(" Iterator: " + elem + " " ,end = "")
 					ITERADOR[0] = ITERADOR[0] - 1
 				elif ITERADOR[0] == 2:
 					print("Rango: " + elem + " to ",end = "")
@@ -330,6 +330,8 @@ def imprimir(result,i):
 					j = i + 4
 			else:
 				imprimir(elem,i+4)
-
-imprimir(result,0)
-print("end")
+try:
+	imprimir(result,0)
+	print("end")
+except:
+	pass
