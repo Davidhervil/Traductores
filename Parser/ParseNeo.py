@@ -241,9 +241,6 @@ def p_EXPR(p):
 			| EXPR TkMenorIgual EXPR
 			| EXPR TkDesigual EXPR
 			| EXPR TkIgual EXPR'''
-	for t in p:
-		if(not (t is None)):
-			print(t)
 
 	if len(p)==2:
 		p[0]=p[1]
@@ -258,7 +255,7 @@ def p_LITER(p):
 
 class cLitMat:
 	def __init__(self,auxlitmat):
-		self.type = "Literl Matriz"
+		self.type = "Literal Matriz"
 		self.valor = "{" + auxlitmat + "}"
 		self.arr = [self.valor]
 
@@ -308,8 +305,12 @@ parser = yacc.yacc(start = 'NEO')
 learcvhivo=f.read()
 result= parser.parse(learcvhivo,lexer=lexy)
 def imprimir(result,i):
-	print(i*" "+result.type)
-	j = i
+	if result.type == "FOR":
+		print(i*" "+result.type+" Iterator: ",end="")
+		j = 0
+	else:
+		print(i*" "+result.type)
+		j = i
 	for elem in result.arr:
 		if elem:
 			if(isinstance(elem,str)):
