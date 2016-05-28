@@ -325,26 +325,31 @@ learcvhivo=f.read()
 result= parser.parse(learcvhivo,lexer=lexy)
 ITERADOR = [0]
 def imprimir(result,i):
-	print(i*" "+result.type)
-	if result.type == "FOR":
-		print((i+4)*" "+"ITERADOR: "+result.identificador)
-		print((i+4)*" "+"RANGO:")
-		imprimir(result.exp2,i+4+4)
-		print((i+4)*" "+"HASTA:")
-		imprimir(result.exp3,i+4+4)
-		imprimir(result.instgen,i+4+4)
-		j = 0
-		ITERADOR[0] = 3 
+	if(isinstance(result,str)):
+		print(i*" "+result)
 	else:
-		#print(i*" "+result.type)
-		j = i
-	for elem in result.arr:
-		if elem:
-			if(isinstance(elem,str)):
-				print(j*" "+elem)
-				j = i + 4
-			else:
-				imprimir(elem,i+4)
+		print(i*" "+result.type)
+		if result.type == "FOR":
+			print((i+4)*" "+"ITERADOR: "+result.identificador)
+			print((i+4)*" "+"RANGO:")
+			imprimir(result.exp2,i+4+4)
+			print((i+4)*" "+"HASTA:")
+			imprimir(result.exp3,i+4+4)
+			print((i+4)*" "+"INSTRUCCION:")
+			imprimir(result.instgen,i+4+4)
+			j = 0
+			ITERADOR[0] = 3 
+		else:
+			#print(i*" "+result.type)
+			j = i
+			for elem in result.arr:
+				if elem:
+					if(isinstance(elem,str)):
+						print(j*" "+elem)
+						j = i + 4
+					else:
+						if(elem.type):
+							imprimir(elem,i+4)
 try:
 	imprimir(result,0)
 	print("end")
