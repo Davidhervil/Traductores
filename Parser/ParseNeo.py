@@ -63,9 +63,8 @@ def p_TIPO(p):
 class cDim:
 	def __init__(self,dim,expr):
 		self.type = "DIMENSION"
-		self.dim = dim
-		self.tipo = expr
-		self.arr = [self.dim,self.tipo]
+		self.valor = dim + "," + expr
+		self.arr = [self.valor]
 def p_DIM(p):
 	'''DIM  : EXPR
 			| DIM TkComa EXPR'''
@@ -283,6 +282,10 @@ def p_AUXLITMAT(p):
 	else:
 		p[0] = cAuxLitMat(p[1],p[3]).val
 
+class cIndexMat:
+	def __init__(self,expr,dim):
+		self.type = "Indexacion de Matrices"
+		self.valor = expr + "[" + dim + "]"
 def p_INDEXMAT (p):
 	'''INDEXMAT : EXPR TkCorcheteAbre DIM TkCorcheteCierra'''
 
