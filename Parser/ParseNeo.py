@@ -218,8 +218,11 @@ class cExprBin:
 		self.arr = [self.expr_izq,self.oper,self.expr_der]
 
 class cExprUn:
-	def __init__(self,expr):
+	def __init__(self,expr,oper):
 		self.type = "Expresion Unaria"
+		self.oper = oper
+		self.expr = expr
+		self.arr = [self.oper, self.expr]
 
 def p_EXPR(p):
 	'''EXPR : LITER
@@ -253,6 +256,11 @@ def p_EXPR(p):
 	elif len(p)==4:
 		if p[1]!="(":
 			p[0] = cExprBin(p[1],p[2],p[3])
+	elif len(p)==3 or (len(p)==4 and p[1]=="("):
+		if p[1]=="(":
+			p[0] = p[2]
+		else:
+			p[0] = cExprUn(p[1],p[2])
 
 def p_LITER(p):
 	'''LITER : TkTrue
