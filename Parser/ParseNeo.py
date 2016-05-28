@@ -135,6 +135,7 @@ class cCondicional:
 		self.guardia = expr
 		self.instgen = instgen
 		self.other = auxcond
+		self.arr = [self.guardia,self.instgen,self.other]
 
 def p_CONDICIONAL(p):
 	'''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
@@ -144,6 +145,7 @@ class cAuxcond:
 	def __init__(self,insgen):
 		self.type = "Otherwise"
 		self.instgen = insgen
+		self.arr = [self.instgen]
 
 def p_AUXCOND(p):
 	'''AUXCOND : TkEnd
@@ -168,6 +170,7 @@ class cIncAlc:
 	def __init__(self,param):
 		self.type = "INCORPORACION DE ALCANCE"
 		self.alc = param
+		self.arr = [self.alc]
 
 def p_INCALC(p):
 	'''INCALC : NEO'''
@@ -322,28 +325,24 @@ learcvhivo=f.read()
 result= parser.parse(learcvhivo,lexer=lexy)
 ITERADOR = [0]
 def imprimir(result,i):
+	print(i*" "+result.type)
 	if result.type == "FOR":
-		print(i*" "+result.type,end="")
+		print((i+4)*" "+"ITERADOR: "+result.identificador)
+		print((i+4)*" "+"RANGO:")
+		imprimir(result.exp2,i+4+4)
+		print((i+4)*" "+"HASTA:")
+		imprimir(result.exp3,i+4+4)
+		imprimir(result.instgen,i+4+4)
 		j = 0
 		ITERADOR[0] = 3 
 	else:
-		print(i*" "+result.type)
+		#print(i*" "+result.type)
 		j = i
 	for elem in result.arr:
 		if elem:
 			if(isinstance(elem,str)):
-				if ITERADOR[0] == 3 :
-					print(" Iterator: " + elem + " " ,end = "")
-					ITERADOR[0] = ITERADOR[0] - 1
-				elif ITERADOR[0] == 2:
-					print("Rango: " + elem + " to ",end = "")
-					ITERADOR[0] = ITERADOR[0] - 1
-				elif ITERADOR[0] == 1:
-					print(elem)
-					ITERADOR[0] = ITERADOR[0] - 1
-				else:
-					print(j*" "+elem)
-					j = i + 4
+				print(j*" "+elem)
+				j = i + 4
 			else:
 				imprimir(elem,i+4)
 try:
