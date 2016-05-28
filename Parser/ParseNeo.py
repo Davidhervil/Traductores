@@ -285,9 +285,14 @@ def p_AUXLITMAT(p):
 class cIndexMat:
 	def __init__(self,expr,dim):
 		self.type = "Indexacion de Matrices"
-		self.valor = expr + "[" + dim + "]"
+		self.mati = expr
+		self.indice = dim
+		self.valor = expr + "[" + dim.valor + "]"
+		self.arr = [self.mati,self.indice]
+
 def p_INDEXMAT (p):
 	'''INDEXMAT : EXPR TkCorcheteAbre DIM TkCorcheteCierra'''
+	p[0] = cIndexMat(p[1],p[3])
 
 def p_error(p):
 	print("Syntax error at '%s'" % p.value)
