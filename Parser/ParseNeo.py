@@ -307,13 +307,16 @@ except:
 parser = yacc.yacc(start = 'NEO')
 learcvhivo=f.read()
 result= parser.parse(learcvhivo,lexer=lexy)
-def imprimir(result):
-	print(result.type)
+def imprimir(result,i):
+	print(i*" "+result.type)
+	j = i
 	for elem in result.arr:
 		if elem:
 			if(isinstance(elem,str)):
-				print(elem)
+				print(j*" "+elem)
+				j = i + 4
 			else:
-				imprimir(elem)
+				imprimir(elem,i+4)
 
-imprimir(result)
+imprimir(result,0)
+print("end")
