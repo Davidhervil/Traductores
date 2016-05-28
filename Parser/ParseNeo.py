@@ -309,18 +309,21 @@ def imprimir(result,i):
 	if result.type == "FOR":
 		print(i*" "+result.type+" Iterator: ",end="")
 		j = 0
-		ITERADOR[0] = 2 
+		ITERADOR[0] = 3 
 	else:
 		print(i*" "+result.type)
 		j = i
 	for elem in result.arr:
 		if elem:
 			if(isinstance(elem,str)):
-				if ITERADOR[0] == 2 :
-					print("Rango: "+elem,end = "")
+				if ITERADOR[0] == 3 :
+					print("Iterator: " + elem + " " ,end = "")
+					ITERADOR[0] = ITERADOR[0] - 1
+				elif ITERADOR[0] == 2:
+					print("Rango: " + elem + " to ",end = "")
 					ITERADOR[0] = ITERADOR[0] - 1
 				elif ITERADOR[0] == 1:
-					print(" to "+elem)
+					print(elem)
 					ITERADOR[0] = ITERADOR[0] - 1
 				else:
 					print(j*" "+elem)
