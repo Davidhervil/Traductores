@@ -152,25 +152,54 @@ def p_AUXCOND(p):
 	else:
 		p[0] = cAuxcond(p[3])
 
-
+class cAsig:
+	def __init__(self,expr_izq,expr_der):
+		self.type = "AIGNACION"
+		self.expr_izq= expr_izq
+		self.expr_der = expr_der
 def p_ASIG(p):
 	'''ASIG : EXPR TkAsignacion EXPR TkPunto'''
+	p[0] = cAsig(p[1].p[3])
+
+class cIncAlc:
+	def __init__(self,param):
+		self.type = "INCORPORACION DE ALCANCE"
+		self.alc = param
 
 def p_INCALC(p):
 	'''INCALC : NEO'''
+	p[0] = cIncAlc(p[1])
+
+class cEntSal:
+	def __init__(self,io,expr):
+		self.type = "ENTRADA SALIDA"
+		self.expr = expr
+		self.io = io
 
 def p_ENTRADASALIDA(p):
 	'''ENTRADASALIDA : TkPrint EXPR TkPunto
 					 | TkRead EXPR TkPunto'''
+	p[0] = cEntSal(p[1],p[2])
+
+class cSecu:
+	def __init__(self,insten,inst):
+		self.type = "SECUENCIACION"
+		self.instgen = instgen
+		self.inst = inst
 
 def p_SECUENC(p):
 	'''SECUENC : INSTGEN INST'''
-
+	p[0] = cSecu(p[1],p[2])
 
 def p_INSTGEN(p):
 	'''INSTGEN : SECUENC
 			   | INST'''
 	p[0] = p[1]
+
+class cEntSal:
+	def __init__(sel,type,expr):
+		self.type = type
+		self.
 
 def p_EXPR(p):
 	'''EXPR : LITER
