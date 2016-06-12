@@ -18,12 +18,16 @@ class cNeo:
 		self.arr = [self.list_dec,self.instgen]
 def p_NEO(p):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
-    	   | TkBegin INSTGEN TkEnd''' 
-    if p[1] == 'with':
-        p[0] = cNeo(p[2],p[4])
+    	   | TkBegin INSTGEN TkEnd'''
+    # Primer Caso:
+    if p[1] == 'with':			
+        p[0] = cNeo(p[2],p[4])			# Nodo Parser :D
+        p[0].tabla = p[2].tabla			# A la tabla de Neo le asigno la tabla de LIST_DEC
+        p[4].tabla = p[0].tabla			# Ahora a INSTGEN le pasamos la tabla de simbolos
     else:
-    	p[0] = cNeo(None,p[2])
-    print(p[2].tabla)
+    	p[0] = cNeo(None,p[2])			# Nodo Parser :D
+        p[4].tabla = p[0].tabla			# Ahora a INSTGEN le pasamos la tabla de simbolos        
+    print(p[0].tabla)
 
 def p_empty(p):
     '''empty :'''
@@ -43,26 +47,19 @@ def p_LIST_DEC(p):
                 | LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
     # Primer Caso:
     if p[1] == 'var':
-
-        p[2].tipo_lista = p[4]              # Se le pasa a la lista de identificadores el TIPO con el que deben cumplir.         
-        p[0] = cList_Dec(None,p[2],p[4])    # Nodo Parser
-        try:                                # Si el TIPO es matriz, entonces tendra atributo tabla.
-            p[4].tabla = p[0].tabla         # Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
-        except:                             # Si no es una matriz, todo es chevere :)
-            print("DEBUG: Caso hoja int char bool")
-        p[2].tabla = p[0].tabla             # La tabla de la lista de identificadores es la misma que la de la lista de declaraciones
-    
-    #Segundo Caso:
+        p[0] = cList_Dec(None,p[2],p[4])    			# Nodo Parser                            
+        for ident in p[2].lista:						# Obtenemos la lista de identificadores
+        	if not p[0].tabla.__contains__(ident[0]):	# Si el elemento no esta, entonces verificamos el tipo
+        		if ident[1]==p[4] or ident[1]=="":						# Si el tipo es el correcto, entonces lo agregamos a la tabla
+                	p[0].tabla[ident[0]] = p[4]			# Agregamos el elemento a la tabla con el tipo correspondiente.
     else:  
-        p[3].tipo_lista = p[5]              # Se le pasa a la lista de identificadores el TIPO con el que deben cumplir. 
-        p[0] = cList_Dec(p[1],p[3],p[5])    # Nodo Parser
-        try:                                # Si el TIPO es matriz, entonces tendra atributo tabla.
-            p[5].tabla = p[0].tabla         # Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
-        except:                             # Si no es una matriz, todo es chevere :)
-          print("DEBUG: Caso hoja int char bool")
-        p[1].tabla = p[0].tabla             # Le pasamos la tabla a la otra lista de declaraciones.
-        p[3].tabla = p[5].tabla             # Le pasamos la tabla a la lista
-
+        p[0] = cList_Dec(p[1],p[3],p[5])    			# Nodo Parser
+        p[0].tabla = p[1].tabla
+        for ident in p[3].lista:						# Obtenemos la lista de identificadores
+        	if not p[0].tabla.__contains__(ident[0]):	# Si el elemento no esta, entonces verificamos el tipo
+        		if ident[1]==p[5] or ident[1]=="":		# Si el tipo es el correcto, entonces lo agregamos a la tabla
+                	p[0].tabla[ident[0]] = p[5]			# Agregamos el elemento a la tabla con el tipo correspondiente.
+        
 class cTipo:
     def __init__(self,dim,tipo):
         self.type = "Matriz"
@@ -80,11 +77,7 @@ def p_TIPO(p):
         p[0] = p[1]
     else:
         p[0] = cTipo(p[3],p[6])
-        p[3].tabla = p[0].tabla
-        try:
-            p[6].tabla = p[0].tabla
-        except:
-            print("Nope")
+        
 class cDim:
     def __init__(self,dim,expr):
         self.type = "DIMENSION"
@@ -99,14 +92,7 @@ def p_DIM(p):
         p[0] = p[1]
     else:
         p[0] = cDim(p[1],p[3])
-        try:
-            p[3].tabla = p[0].tabla
-        except:
-            print("Dim-EXPR nope")
-        try:
-            p[1].tabla = p[0].tabla
-        except:
-            print("Dim-Dim Nope")
+        
 
 class cList_Iden:
     def __init__(self,lis_iden,opasig,ident):
@@ -116,35 +102,24 @@ class cList_Iden:
         self.ident = ident
         self.arr = [self.lis_iden,self.expr,self.ident]
         self.tabla = dict()
-        self.tipo=None
+        self.lista = []
         
 def p_LIST_IDEN(p):
     '''LIST_IDEN : TkId OPASIG
                  | LIST_IDEN TkComa TkId OPASIG'''
     # Primer Caso:
     if len(p) == 3:
-        p[0] = cList_Iden(None,p[2],p[1])   # Nodo parser
-        try:
-            p[2].tabla = p[0].tabla                         # Pasar la tabla a OPASIG por si la necesita.
-        except:
-            print("Hola vale")
-        if p[2]== "" or p[0].tipo == p[2].tipo: # Verificar que los tipos esten bien.
-            if not p[0].tabla.__contains__(p[1]):           # Verificar que no esta repetido en la tabla.
-                p[0].tabla[p[1]] = p[0].tipo            # Si todo salio bien, agregar a la tabla.
-            else:                                       
-                print("El elemento ya esta en la tabla")    # PONER FORMATO DESPUUES
-                exit()    
+        p[0] = cList_Iden(None,p[2],p[1])   			# Nodo parser
+        if p[2]!="":
+        	p[0].lista = [(p[1],p[2].tipo)]					# Caso base :D
+        else:
+          	p[0].lista = [(p[1],"")]
     else:
         p[0] = cList_Iden(p[1],p[4],p[3])               # Nodo Parser :D
-        p[1].tabla = p[0].tabla                         # Pasarle la tabla a la siguiente Lista de identificadores
-        p[4].tabla = p[0].tabla
-        if p[4] == "" or p[0].tipo == p[4].tipo:    # Verificar que los tipos esten bien
-            if not p[0].tabla.__contains__(p[3]):           # Verificar que no esta repetido en la tabla.
-                p[0].tabla[p[3]] = p[0].tipo            # Si todo salio bien, agregar a la tabla.
-            else:                                       
-                print("El elemento ya esta en la tabla")    # PONER FORMATO DESPUUES
-                exit()
-
+        if p[4]!="":
+        	p[0].lista = p[1].lista.append((p[3],p[4].tipo))# A lo que llevamos de la lista anterior. le pegamos lo ultimo
+		else:
+            p[0].lista = p[1].lista.append((p[3],""))
 class cOpasig:
     def __init__(self,expr):
         self.type = "OPASIG"
@@ -158,6 +133,7 @@ def p_OPASIG(p):
               | empty'''
     if len(p) == 3:
         p[0] = cOpasig(p[2])
+        
     else:
         p[0] = ""
 
@@ -400,3 +376,20 @@ try:
 	print("end")
 except:
 	pass
+  
+  
+"""
+var i <- 5, j<-i : int
+var j<-i, i<-5 : int
+
+
+ a,i=i,5
+ 
+ 
+%%NEHRO MAMAMA HEUVO
+with
+	var n <- 5 : int
+begin 
+	n<-2+2.
+end
+"""
