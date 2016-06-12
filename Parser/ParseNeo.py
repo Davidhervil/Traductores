@@ -54,10 +54,10 @@ def p_LIST_DEC(p):
                 	p[0].tabla[ident[0]] = p[4]			# Agregamos el elemento a la tabla con el tipo correspondiente.
                 else:
                 	print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[4])+" pero se le asigno "+str(ident[1]))
-                  exit()
+                	exit(0)
             else:
 				print("La variable "+str(ident[0])+" fue declarada anteriormente")
-                exit()
+                exit(0)
     else:  
         p[0] = cList_Dec(p[1],p[3],p[5])    			# Nodo Parser
         p[0].tabla = p[1].tabla
@@ -67,10 +67,10 @@ def p_LIST_DEC(p):
                 	p[0].tabla[ident[0]] = p[5]			# Agregamos el elemento a la tabla con el tipo correspondiente.
 				else:
                   print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[4])+" pero se le asigno "+str(ident[1]))
-                  exit()
+                  exit(0)
             else:
 				print("La variable "+str(ident[0])+" fue declarada anteriormente")
-                exit()
+                exit(0)
 class cTipo:
     def __init__(self,dim,tipo):
         self.type = "Matriz"
