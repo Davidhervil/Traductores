@@ -117,61 +117,49 @@ class cList_Iden:
         self.arr = [self.lis_iden,self.expr,self.ident]
         self.tabla = dict()
         self.tipo=None
-
-
-class cList_Iden:
-	def __init__(self,lis_iden,opasig,ident):
-		self.type = "LISTA DE IDENTIFICADORES"
-		self.lis_iden = lis_iden
-		self.expr = opasig
-		self.ident = ident
-		self.arr = [self.lis_iden,self.expr,self.ident]
-        self.tabla = dict()
-        self.tipo=None
         
 def p_LIST_IDEN(p):
-	'''LIST_IDEN : TkId OPASIG
-			     | LIST_IDEN TkComa TkId OPASIG'''
+    '''LIST_IDEN : TkId OPASIG
+                 | LIST_IDEN TkComa TkId OPASIG'''
     # Primer Caso:
-	if len(p) == 3:
-		p[0] = cList_Iden(None,p[2],p[1])	# Nodo parser
+    if len(p) == 3:
+        p[0] = cList_Iden(None,p[2],p[1])   # Nodo parser
         try:
-        	p[2].tabla = p[0].tabla							# Pasar la tabla a OPASIG por si la necesita.
+            p[2].tabla = p[0].tabla                         # Pasar la tabla a OPASIG por si la necesita.
         except:
-          	print("Hola vale")
-        if p[2] != ""
-        	if p[0].tipo == p[2].tipo or p[2].tipo == "":	# Verificar que los tipos esten bien.
-        		if not p[0].tabla.__contains__(p[1]):			# Verificar que no esta repetido en la tabla.
-        			p[0].tabla[p[1]] = p[0].tipo			# Si todo salio bien, agregar a la tabla.
-				else:										
-              		print("El elemento ya esta en la tabla")	# PONER FORMATO DESPUUES
-            		exit()
+            print("Hola vale")
+        if p[2]== "" or p[0].tipo == p[2].tipo: # Verificar que los tipos esten bien.
+            if not p[0].tabla.__contains__(p[1]):           # Verificar que no esta repetido en la tabla.
+                p[0].tabla[p[1]] = p[0].tipo            # Si todo salio bien, agregar a la tabla.
+            else:                                       
+                print("El elemento ya esta en la tabla")    # PONER FORMATO DESPUUES
+                exit()    
     else:
-		p[0] = cList_Iden(p[1],p[4],p[3])				# Nodo Parser :D
-        p[1].tabla = p[0].tabla							# Pasarle la tabla a la siguiente Lista de identificadores
+        p[0] = cList_Iden(p[1],p[4],p[3])               # Nodo Parser :D
+        p[1].tabla = p[0].tabla                         # Pasarle la tabla a la siguiente Lista de identificadores
         p[4].tabla = p[0].tabla
-        if p[0].tipo == p[4].tipo or p[4].tipo == "":	# Verificar que los tipos esten bien
-        	if not p[0].tabla.__contains__(p[3]):			# Verificar que no esta repetido en la tabla.
-        		p[0].tabla[p[3]] = p[0].tipo			# Si todo salio bien, agregar a la tabla.
-			else:										
-              	print("El elemento ya esta en la tabla")	# PONER FORMATO DESPUUES
-            	exit()
-  
+        if p[4] == "" or p[0].tipo == p[4].tipo:    # Verificar que los tipos esten bien
+            if not p[0].tabla.__contains__(p[3]):           # Verificar que no esta repetido en la tabla.
+                p[0].tabla[p[3]] = p[0].tipo            # Si todo salio bien, agregar a la tabla.
+            else:                                       
+                print("El elemento ya esta en la tabla")    # PONER FORMATO DESPUUES
+                exit()
+
 class cOpasig:
-	def __init__(self,expr):
-		self.type = "OPASIG"
-		self.expr = expr
+    def __init__(self,expr):
+        self.type = "OPASIG"
+        self.expr = expr
         self.tabla = dict()
-		self.arr = [self.expr]
+        self.arr = [self.expr]
         self.tipo = None
         
 def p_OPASIG(p):
-	'''OPASIG : TkAsignacion EXPR
-			  | empty'''
-	if len(p) == 3:
-		p[0] = cOpasig(p[2])
-	else:
-		p[0] = ""
+    '''OPASIG : TkAsignacion EXPR
+              | empty'''
+    if len(p) == 3:
+        p[0] = cOpasig(p[2])
+    else:
+        p[0] = ""
 
 
 class cINST:
@@ -182,7 +170,6 @@ class cINST:
 		self.exp2 = exp2
 		self.exp3 = exp3
 		self.instgen = insgen
-        self.tabla = dict()
 		self.arr = [self.identificador,self.exp1,self.exp2,self.exp3,self.instgen]
 def p_INST(p):
 	'''INST : ASIG
@@ -207,7 +194,6 @@ class cCondicional:
 		self.guardia = expr
 		self.instgen = instgen
 		self.other = auxcond
-        self.tabla = dict()
 		self.arr = [self.guardia,self.instgen,self.other]
 
 def p_CONDICIONAL(p):
@@ -218,7 +204,6 @@ class cAuxcond:
 	def __init__(self,insgen):
 		self.type = "Otherwise"
 		self.instgen = insgen
-        self.tabla = dict()
 		self.arr = [self.instgen]
 
 def p_AUXCOND(p):
@@ -235,7 +220,6 @@ class cAsig:
 		self.type = "ASIGNACION"
 		self.expr_izq= expr_izq
 		self.expr_der = expr_der
-		self.tabla = dict()
 		self.arr = [self.expr_izq,self.expr_der]
 def p_ASIG(p):
 	'''ASIG : EXPR TkAsignacion EXPR TkPunto'''
@@ -245,7 +229,6 @@ class cIncAlc:
 	def __init__(self,param):
 		self.type = "INCORPORACION DE ALCANCE"
 		self.alc = param
-        self.tabla = dict()
 		self.arr = [self.alc]
 
 def p_INCALC(p):
@@ -257,7 +240,6 @@ class cEntSal:
 		self.type = "ENTRADA SALIDA"
 		self.expr = expr
 		self.io = io
-        self.tabla = dict()
 		self.arr = [self.expr, self.io]
 
 def p_ENTRADASALIDA(p):
@@ -270,7 +252,6 @@ class cSecu:
 		self.type = "SECUENCIACION"
 		self.instgen = instgen
 		self.inst = inst
-        self.tabla = dict()
 		self.arr = [self.instgen,self.inst]
 
 def p_SECUENC(p):
@@ -296,7 +277,6 @@ class cExprBin:
 		#	self.type = "Expresion Relacional"
 		self.oper = oper
 		self.expr_der = expr_der
-        self.tabla = dict()
 		self.arr = [self.expr_izq,self.oper,self.expr_der]
 
 class cExprUn:
@@ -304,7 +284,6 @@ class cExprUn:
 		self.type = "Expresion Unaria"
 		self.oper = oper
 		self.expr = expr
-        self.tabla = dict()
 		self.arr = [self.oper, self.expr]
 
 def p_EXPR(p):
@@ -353,12 +332,10 @@ def p_LITER(p):
 			 | LITMAT'''
 	p[0] = p[1]
 
-
 class cLitMat:
 	def __init__(self,auxlitmat):
 		self.type = "Literal Matriz"
 		self.valor = "{" + auxlitmat + "}"
-        self.tabla = dict()
 		self.arr = [self.valor]
 
 def p_LITMAT(p):
@@ -372,7 +349,7 @@ def p_LITMAT(p):
 class cAuxLitMat:
 	def __init__(self,expr,auxlitmat):
 		self.val = expr + "," + auxlitmat
-        self.tabla = dict()
+		self.arr = [self.val]
 
 def p_AUXLITMAT(p):
 	'''AUXLITMAT : EXPR TkComa AUXLITMAT
@@ -387,7 +364,6 @@ class cIndexMat:
 		self.type = "Indexacion de Matrices"
 		self.mati = expr
 		self.indice = dim
-        self.tabla = dict()
 		self.arr = [self.mati,self.indice]
 
 def p_INDEXMAT (p):
@@ -407,69 +383,20 @@ except:
 parser = yacc.yacc(start = 'NEO')
 learcvhivo=f.read()
 result= parser.parse(learcvhivo,lexer=lexy)
-ITERADOR = [0]
+
 def imprimir(result,i):
-	if(isinstance(result,str)):
-		print(i*" "+result)
-	else:
-		print(i*" "+result.type)
-		if result.type == "FOR":
-			print((i+2)*" "+"ITERADOR: "+result.identificador)
-			print((i+2)*" "+"RANGO:")
-			imprimir(result.exp2,i+2+2)
-			print((i+2)*" "+"HASTA:")
-			imprimir(result.exp3,i+2+2)
-			print((i+2)*" "+"INSTRUCCION:")
-			imprimir(result.instgen,i+2+2)
-			j = 0
-			ITERADOR[0] = 3 
-		elif result.type == "ASIGNACION":
-			print((i+2)*" "+"CONTENEDOR:")
-			imprimir(result.expr_izq,i+2+2)
-			print((i+2)*" "+"EXPRESION A ASIGNAR:")
-			imprimir(result.expr_der,i+2+2)
-			j = 0
-			ITERADOR[0] = 3
-		elif result.type == "Expresion Binaria":
-			print((i+2)*" "+"EXPRESION IZQ:")
-			imprimir(result.expr_izq,i+2+2)
-			print((i+2)*" "+"OPERADOR: "+result.oper)
-			print((i+2)*" "+"EXPRESION IZQ:")
-			imprimir(result.expr_der,i+2+2)
-			j = 0
-			ITERADOR[0] = 3  
-		else:
-			#print(i*" "+result.type)
-			j = i
-			for elem in result.arr:
-				if elem:
-					if(isinstance(elem,str)):
-						print(j*" "+elem)
-						j = i + 2
-					else:
-						if(elem.type):
-							imprimir(elem,i+2)
+	print(i*" "+result.type)
+	j = i
+	for elem in result.arr:
+		if elem:
+			if(isinstance(elem,str)):
+				j = i + 4
+				print(j*" "+elem)
+					
+			else:
+				imprimir(elem,i+4)
 try:
 	imprimir(result,0)
 	print("end")
 except:
 	pass
-  
-"""
-# 									ZONA DE COMUNICACION 									  #
-http://stackoverflow.com/questions/9819602/union-of-dict-objects-in-python
-
->>> class hola:
-...     def __init__(self,inst):
-...             self.inst=inst
-...
->>> a=hola(3)
->>> a
-<__main__.hola object at 0x000001E1FA7E4278>
->>> b=hola(3)
->>> b
-<__main__.hola object at 0x000001E1FA7E4470>
->>> a==b
-False
->>>
-"""
