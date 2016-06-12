@@ -25,7 +25,7 @@ def p_NEO(p):
         p[0].tabla = p[2].tabla			# A la tabla de Neo le asigno la tabla de LIST_DEC
         p[4].tabla = p[0].tabla			# Ahora a INSTGEN le pasamos la tabla de simbolos
     else:
-    	p[0] = cNeo(None,p[2])			# Nodo Parser :D
+        p[0] = cNeo(None,p[2])			# Nodo Parser :D
         p[4].tabla = p[0].tabla			# Ahora a INSTGEN le pasamos la tabla de simbolos        
     print(p[0].tabla)
 
@@ -49,27 +49,27 @@ def p_LIST_DEC(p):
     if p[1] == 'var':
         p[0] = cList_Dec(None,p[2],p[4])    			# Nodo Parser                            
         for ident in p[2].lista:						# Obtenemos la lista de identificadores
-        	if not p[0].tabla.__contains__(ident[0]):	# Si el elemento no esta, entonces verificamos el tipo
-        		if ident[1]==p[4] or ident[1]=="":						# Si el tipo es el correcto, entonces lo agregamos a la tabla
-                	p[0].tabla[ident[0]] = p[4]			# Agregamos el elemento a la tabla con el tipo correspondiente.
+            if not p[0].tabla.__contains__(ident[0]):	# Si el elemento no esta, entonces verificamos el tipo
+                if ident[1]==p[4] or ident[1]=="":						# Si el tipo es el correcto, entonces lo agregamos a la tabla
+                    p[0].tabla[ident[0]] = p[4]			# Agregamos el elemento a la tabla con el tipo correspondiente.
                 else:
-                	print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[4])+" pero se le asigno "+str(ident[1]))
-                	exit(0)
+                    print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[4])+" pero se le asigno "+str(ident[1]))
+                    exit(0)
             else:
-				print("La variable "+str(ident[0])+" fue declarada anteriormente")
+                print("La variable "+str(ident[0])+" fue declarada anteriormente")
                 exit(0)
     else:  
         p[0] = cList_Dec(p[1],p[3],p[5])    			# Nodo Parser
         p[0].tabla = p[1].tabla
         for ident in p[3].lista:						# Obtenemos la lista de identificadores
-        	if not p[0].tabla.__contains__(ident[0]):	# Si el elemento no esta, entonces verificamos el tipo
-        		if ident[1]==p[5] or ident[1]=="":		# Si el tipo es el correcto, entonces lo agregamos a la tabla
-                	p[0].tabla[ident[0]] = p[5]			# Agregamos el elemento a la tabla con el tipo correspondiente.
-				else:
-                  print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[4])+" pero se le asigno "+str(ident[1]))
-                  exit(0)
+            if not p[0].tabla.__contains__(ident[0]):	# Si el elemento no esta, entonces verificamos el tipo
+                if ident[1]==p[5] or ident[1]=="":		# Si el tipo es el correcto, entonces lo agregamos a la tabla
+                    p[0].tabla[ident[0]] = p[5]			# Agregamos el elemento a la tabla con el tipo correspondiente.
+                else:
+                    print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[4])+" pero se le asigno "+str(ident[1]))
+                    exit(0)
             else:
-				print("La variable "+str(ident[0])+" fue declarada anteriormente")
+                print("La variable "+str(ident[0])+" fue declarada anteriormente")
                 exit(0)
 class cTipo:
     def __init__(self,dim,tipo):
@@ -122,15 +122,16 @@ def p_LIST_IDEN(p):
     if len(p) == 3:
         p[0] = cList_Iden(None,p[2],p[1])   			# Nodo parser
         if p[2]!="":
-        	p[0].lista = [(p[1],p[2].tipo)]					# Caso base :D
+            p[0].lista = [(p[1],p[2].tipo)]					# Caso base :D
         else:
-          	p[0].lista = [(p[1],"")]
+            p[0].lista = [(p[1],"")]
     else:
         p[0] = cList_Iden(p[1],p[4],p[3])               # Nodo Parser :D
         if p[4]!="":
-        	p[0].lista = p[1].lista.append((p[3],p[4].tipo))# A lo que llevamos de la lista anterior. le pegamos lo ultimo
-		else:
-            p[0].lista = p[1].lista.append((p[3],""))
+            p[0].lista = p[1].lista + [(p[3],p[4].tipo)]# A lo que llevamos de la lista anterior. le pegamos lo ultimo
+        else:
+            p[0].lista = p[1].lista + [(p[3],"")]
+    
 class cOpasig:
     def __init__(self,expr):
         self.type = "OPASIG"
@@ -144,6 +145,7 @@ def p_OPASIG(p):
               | empty'''
     if len(p) == 3:
         p[0] = cOpasig(p[2])
+        p[0].tipo = p[2].tipo
         
     else:
         p[0] = ""
