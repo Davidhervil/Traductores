@@ -1,3 +1,5 @@
+# La zona de comunicacion esta al final#
+
 from LexNeo import tokens,reservados,lexy
 import ply.yacc as yacc
 import sys
@@ -7,22 +9,29 @@ precedence = (
     ('left', 'TkMult', 'TkDiv','TkConjuncion','TkRotacion'),
     ('left','TkMod','TkSiguienteCar','TkAnteriorCar'),
     ('right', 'UTkResta','TkNegacion','TkTrasposicion',), 
-    ('nonassoc','TkValorAscii')           # Unary minus operator
-)
+    ('nonassoc','TkValorAscii'))
+
 class cNeo:
 	def __init__(self,lis_dec,insgen):
 		self.type = "NEO"
 		self.list_dec = lis_dec
 		self.instgen = insgen
+        self.tabla = dict()
 		self.arr = [self.list_dec,self.instgen]
+        
 def p_NEO(p):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
     	   | TkBegin INSTGEN TkEnd''' 
     if p[1] == 'with':
     	p[0] = cNeo(p[2],p[4])
+        # Primero necesitamos encontrar todo los elementos de la lista de declaraciones (Sintetizar)
+        p[0].tabla = p[2].tabla.copy()
+        # Luego de que tenemos todas las declaraciones, las pasamos a las instrucciones (Heredar)
+        p[4].tabla = p[0].tabla
     else:
     	p[0] = cNeo(None,p[2])
-
+        # Tenemos todas las declaraciones, las pasamos a las instrucciones (Heredar)
+        p[2].tabla = p[0].tabla
 
 def p_empty(p):
     '''empty :'''
@@ -35,20 +44,41 @@ class cList_Dec:
 		self.list_iden = lis_iden
 		self.tipo = tipo
 		self.arr = [self.list_dec,self.list_iden,self.tipo]
+        self.tabla = dict() 
+        
 def p_LIST_DEC(p):
 	'''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
 				| LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
+    # Primer Caso:
 	if p[1] == 'var':
-		p[0] = cList_Dec(None,p[2],p[4])
-	else:
-		p[0] = cList_Dec(p[1],p[3],p[5])
+
+      	p[2].tipo_lista = p[4]				# Se le pasa a la lista de identificadores el TIPO con el que deben cumplir.         
+    	p[0] = cList_Dec(None,p[2],p[4])	# Nodo Parser
+        try:								# Si el TIPO es matriz, entonces tendra atributo tabla.
+        	p[4].tabla = p[0].tabla			# Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
+        except:								# Si no es una matriz, todo es chevere :)
+        	print("DEBUG: Caso hoja int char bool")
+		p[2].tabla = p[0].tabla 	# La tabla de la lista de identificadores es la misma que la de la lista de declaraciones
+	
+    #Segundo Caso:
+	else:  
+      	p[3].tipo_lista = p[5]				# Se le pasa a la lista de identificadores el TIPO con el que deben cumplir. 
+        p[0] = cList_Dec(p[1],p[3],p[5])	# Nodo Parser
+        try:								# Si el TIPO es matriz, entonces tendra atributo tabla.
+        	p[5].tabla = p[0].tabla			# Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
+      	except:								# Si no es una matriz, todo es chevere :)
+          print("DEBUG: Caso hoja int char bool")
+        p[1].tabla = p[0].tabla				# Le pasamos la tabla a la otra lista de declaraciones.
+		p[3].tabla = p[5].tabla				# Le pasamos la tabla a la lista
 
 class cTipo:
 	def __init__(self,dim,tipo):
 		self.type = "Matriz"
 		self.dim = dim
 		self.tipo = tipo
+        self.tabla = dict()
 		self.arr = [self.dim,self.tipo]
+        
 def p_TIPO(p):
 	'''TIPO : TkInt
 	     	| TkBool
@@ -58,13 +88,16 @@ def p_TIPO(p):
 		p[0] = p[1]
 	else:
 		p[0] = cTipo(p[3],p[6])
-
-
+		p[3].tabla = p[0].tabla
+        p[6].tabla = p[0].tabla
+        
 class cDim:
 	def __init__(self,dim,expr):
 		self.type = "DIMENSION"
 		self.valor = dim + "," + expr
+        self.tabla = dict()
 		self.arr = [self.valor]
+        
 def p_DIM(p):
 	'''DIM  : EXPR
 			| DIM TkComa EXPR'''
@@ -72,6 +105,8 @@ def p_DIM(p):
 		p[0] = p[1]
 	else:
 		p[0] = cDim(p[1],p[3])
+        p[3].tabla = p[0].tabla
+        p[1].tabla = p[0].tabla
 
 
 class cList_Iden:
@@ -81,19 +116,41 @@ class cList_Iden:
 		self.expr = opasig
 		self.ident = ident
 		self.arr = [self.lis_iden,self.expr,self.ident]
+        self.tabla = dict()
+        self.tipo=None
+        
 def p_LIST_IDEN(p):
 	'''LIST_IDEN : TkId OPASIG
 			     | LIST_IDEN TkComa TkId OPASIG'''
+    # Primer Caso:
 	if len(p) == 3:
-		p[0] = cList_Iden(None,p[2],p[1])
-	else:
-		p[0] = cList_Iden(p[1],p[4],p[3])
-
+		p[0] = cList_Iden(None,p[2],p[1])	# Nodo parser
+        p[2].tabla = p[0].tabla							# Pasar la tabla a OPASIG por si la necesita.
+        if p[0].tipo == p[2].tipo or p[2].tipo == "":	# Verificar que los tipos esten bien.
+        	if not p[0].tabla.__contains__(p[1]):			# Verificar que no esta repetido en la tabla.
+        		p[0].tabla[p[1]] = p[0].tipo			# Si todo salio bien, agregar a la tabla.
+			else:										
+              	print("El elemento ya esta en la tabla")	# PONER FORMATO DESPUUES
+            	exit()
+    else:
+		p[0] = cList_Iden(p[1],p[4],p[3])				# Nodo Parser :D
+        p[1].tabla = p[0].tabla							# Pasarle la tabla a la siguiente Lista de identificadores
+        p[4].tabla = p[0].tabla
+        if p[0].tipo == p[4].tipo or p[4].tipo == "":	# Verificar que los tipos esten bien
+        	if not p[0].tabla.__contains__(p[3]):			# Verificar que no esta repetido en la tabla.
+        		p[0].tabla[p[3]] = p[0].tipo			# Si todo salio bien, agregar a la tabla.
+			else:										
+              	print("El elemento ya esta en la tabla")	# PONER FORMATO DESPUUES
+            	exit()
+  
 class cOpasig:
 	def __init__(self,expr):
 		self.type = "OPASIG"
 		self.expr = expr
+        self.tabla = dict()
 		self.arr = [self.expr]
+        self.tipo = None
+        
 def p_OPASIG(p):
 	'''OPASIG : TkAsignacion EXPR
 			  | empty'''
@@ -111,6 +168,7 @@ class cINST:
 		self.exp2 = exp2
 		self.exp3 = exp3
 		self.instgen = insgen
+        self.tabla = dict()
 		self.arr = [self.identificador,self.exp1,self.exp2,self.exp3,self.instgen]
 def p_INST(p):
 	'''INST : ASIG
@@ -135,6 +193,7 @@ class cCondicional:
 		self.guardia = expr
 		self.instgen = instgen
 		self.other = auxcond
+        self.tabla = dict()
 		self.arr = [self.guardia,self.instgen,self.other]
 
 def p_CONDICIONAL(p):
@@ -145,6 +204,7 @@ class cAuxcond:
 	def __init__(self,insgen):
 		self.type = "Otherwise"
 		self.instgen = insgen
+        self.tabla = dict()
 		self.arr = [self.instgen]
 
 def p_AUXCOND(p):
@@ -161,6 +221,7 @@ class cAsig:
 		self.type = "ASIGNACION"
 		self.expr_izq= expr_izq
 		self.expr_der = expr_der
+		self.tabla = dict()
 		self.arr = [self.expr_izq,self.expr_der]
 def p_ASIG(p):
 	'''ASIG : EXPR TkAsignacion EXPR TkPunto'''
@@ -170,6 +231,7 @@ class cIncAlc:
 	def __init__(self,param):
 		self.type = "INCORPORACION DE ALCANCE"
 		self.alc = param
+        self.tabla = dict()
 		self.arr = [self.alc]
 
 def p_INCALC(p):
@@ -181,6 +243,7 @@ class cEntSal:
 		self.type = "ENTRADA SALIDA"
 		self.expr = expr
 		self.io = io
+        self.tabla = dict()
 		self.arr = [self.expr, self.io]
 
 def p_ENTRADASALIDA(p):
@@ -193,6 +256,7 @@ class cSecu:
 		self.type = "SECUENCIACION"
 		self.instgen = instgen
 		self.inst = inst
+        self.tabla = dict()
 		self.arr = [self.instgen,self.inst]
 
 def p_SECUENC(p):
@@ -218,6 +282,7 @@ class cExprBin:
 		#	self.type = "Expresion Relacional"
 		self.oper = oper
 		self.expr_der = expr_der
+        self.tabla = dict()
 		self.arr = [self.expr_izq,self.oper,self.expr_der]
 
 class cExprUn:
@@ -225,6 +290,7 @@ class cExprUn:
 		self.type = "Expresion Unaria"
 		self.oper = oper
 		self.expr = expr
+        self.tabla = dict()
 		self.arr = [self.oper, self.expr]
 
 def p_EXPR(p):
@@ -273,10 +339,12 @@ def p_LITER(p):
 			 | LITMAT'''
 	p[0] = p[1]
 
+
 class cLitMat:
 	def __init__(self,auxlitmat):
 		self.type = "Literal Matriz"
 		self.valor = "{" + auxlitmat + "}"
+        self.tabla = dict()
 		self.arr = [self.valor]
 
 def p_LITMAT(p):
@@ -290,6 +358,7 @@ def p_LITMAT(p):
 class cAuxLitMat:
 	def __init__(self,expr,auxlitmat):
 		self.val = expr + "," + auxlitmat
+        self.tabla = dict()
 
 def p_AUXLITMAT(p):
 	'''AUXLITMAT : EXPR TkComa AUXLITMAT
@@ -304,6 +373,7 @@ class cIndexMat:
 		self.type = "Indexacion de Matrices"
 		self.mati = expr
 		self.indice = dim
+        self.tabla = dict()
 		self.arr = [self.mati,self.indice]
 
 def p_INDEXMAT (p):
@@ -370,3 +440,22 @@ try:
 	print("end")
 except:
 	pass
+  
+"""
+# 									ZONA DE COMUNICACION 									  #
+http://stackoverflow.com/questions/9819602/union-of-dict-objects-in-python
+
+>>> class hola:
+...     def __init__(self,inst):
+...             self.inst=inst
+...
+>>> a=hola(3)
+>>> a
+<__main__.hola object at 0x000001E1FA7E4278>
+>>> b=hola(3)
+>>> b
+<__main__.hola object at 0x000001E1FA7E4470>
+>>> a==b
+False
+>>>
+"""
