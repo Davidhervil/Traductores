@@ -1,5 +1,3 @@
-# La zona de comunicacion esta al final#
-
 from LexNeo import tokens,reservados,lexy
 import ply.yacc as yacc
 import sys
@@ -9,104 +7,116 @@ precedence = (
     ('left', 'TkMult', 'TkDiv','TkConjuncion','TkRotacion'),
     ('left','TkMod','TkSiguienteCar','TkAnteriorCar'),
     ('right', 'UTkResta','TkNegacion','TkTrasposicion',), 
-    ('nonassoc','TkValorAscii'))
-
+    ('nonassoc','TkValorAscii')           # Unary minus operator
+)
 class cNeo:
 	def __init__(self,lis_dec,insgen):
 		self.type = "NEO"
 		self.list_dec = lis_dec
 		self.instgen = insgen
-        self.tabla = dict()
+		self.tabla = dict()
 		self.arr = [self.list_dec,self.instgen]
-        
 def p_NEO(p):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
     	   | TkBegin INSTGEN TkEnd''' 
     if p[1] == 'with':
-    	p[0] = cNeo(p[2],p[4])
-        # Primero necesitamos encontrar todo los elementos de la lista de declaraciones (Sintetizar)
-        p[0].tabla = p[2].tabla.copy()
-        # Luego de que tenemos todas las declaraciones, las pasamos a las instrucciones (Heredar)
-        p[4].tabla = p[0].tabla
+        p[0] = cNeo(p[2],p[4])
     else:
     	p[0] = cNeo(None,p[2])
-        # Tenemos todas las declaraciones, las pasamos a las instrucciones (Heredar)
-        p[2].tabla = p[0].tabla
+    print(p[2].tabla)
 
 def p_empty(p):
     '''empty :'''
     pass
 
 class cList_Dec:
-	def __init__(self, lis_dec, lis_iden, tipo):
-		self.type = "LISTA DE DECLARACION"
-		self.list_dec = lis_dec
-		self.list_iden = lis_iden
-		self.tipo = tipo
-		self.arr = [self.list_dec,self.list_iden,self.tipo]
+    def __init__(self, lis_dec, lis_iden, tipo):
+        self.type = "LISTA DE DECLARACION"
+        self.list_dec = lis_dec
+        self.list_iden = lis_iden
+        self.tipo = tipo
+        self.arr = [self.list_dec,self.list_iden,self.tipo]
         self.tabla = dict() 
         
 def p_LIST_DEC(p):
-	'''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
-				| LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
+    '''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
+                | LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
     # Primer Caso:
-	if p[1] == 'var':
+    if p[1] == 'var':
 
-      	p[2].tipo_lista = p[4]				# Se le pasa a la lista de identificadores el TIPO con el que deben cumplir.         
-    	p[0] = cList_Dec(None,p[2],p[4])	# Nodo Parser
-        try:								# Si el TIPO es matriz, entonces tendra atributo tabla.
-        	p[4].tabla = p[0].tabla			# Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
-        except:								# Si no es una matriz, todo es chevere :)
-        	print("DEBUG: Caso hoja int char bool")
-		p[2].tabla = p[0].tabla 	# La tabla de la lista de identificadores es la misma que la de la lista de declaraciones
-	
+        p[2].tipo_lista = p[4]              # Se le pasa a la lista de identificadores el TIPO con el que deben cumplir.         
+        p[0] = cList_Dec(None,p[2],p[4])    # Nodo Parser
+        try:                                # Si el TIPO es matriz, entonces tendra atributo tabla.
+            p[4].tabla = p[0].tabla         # Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
+        except:                             # Si no es una matriz, todo es chevere :)
+            print("DEBUG: Caso hoja int char bool")
+        p[2].tabla = p[0].tabla             # La tabla de la lista de identificadores es la misma que la de la lista de declaraciones
+    
     #Segundo Caso:
-	else:  
-      	p[3].tipo_lista = p[5]				# Se le pasa a la lista de identificadores el TIPO con el que deben cumplir. 
-        p[0] = cList_Dec(p[1],p[3],p[5])	# Nodo Parser
-        try:								# Si el TIPO es matriz, entonces tendra atributo tabla.
-        	p[5].tabla = p[0].tabla			# Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
-      	except:								# Si no es una matriz, todo es chevere :)
+    else:  
+        p[3].tipo_lista = p[5]              # Se le pasa a la lista de identificadores el TIPO con el que deben cumplir. 
+        p[0] = cList_Dec(p[1],p[3],p[5])    # Nodo Parser
+        try:                                # Si el TIPO es matriz, entonces tendra atributo tabla.
+            p[5].tabla = p[0].tabla         # Le pasamos la tabla porque una matriz puede llevar a EXPRESIONES.
+        except:                             # Si no es una matriz, todo es chevere :)
           print("DEBUG: Caso hoja int char bool")
-        p[1].tabla = p[0].tabla				# Le pasamos la tabla a la otra lista de declaraciones.
-		p[3].tabla = p[5].tabla				# Le pasamos la tabla a la lista
+        p[1].tabla = p[0].tabla             # Le pasamos la tabla a la otra lista de declaraciones.
+        p[3].tabla = p[5].tabla             # Le pasamos la tabla a la lista
 
 class cTipo:
-	def __init__(self,dim,tipo):
-		self.type = "Matriz"
-		self.dim = dim
-		self.tipo = tipo
+    def __init__(self,dim,tipo):
+        self.type = "Matriz"
+        self.dim = dim
+        self.tipo = tipo
         self.tabla = dict()
-		self.arr = [self.dim,self.tipo]
+        self.arr = [self.dim,self.tipo]
         
 def p_TIPO(p):
-	'''TIPO : TkInt
-	     	| TkBool
-	      	| TkChar
-	     	| TkMatrix TkCorcheteAbre DIM TkCorcheteCierra TkOf TIPO'''
-	if len(p) == 2:
-		p[0] = p[1]
-	else:
-		p[0] = cTipo(p[3],p[6])
-		p[3].tabla = p[0].tabla
-        p[6].tabla = p[0].tabla
-        
+    '''TIPO : TkInt
+            | TkBool
+            | TkChar
+            | TkMatrix TkCorcheteAbre DIM TkCorcheteCierra TkOf TIPO'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = cTipo(p[3],p[6])
+        p[3].tabla = p[0].tabla
+        try:
+            p[6].tabla = p[0].tabla
+        except:
+            print("Nope")
 class cDim:
-	def __init__(self,dim,expr):
-		self.type = "DIMENSION"
-		self.valor = dim + "," + expr
+    def __init__(self,dim,expr):
+        self.type = "DIMENSION"
+        self.valor = dim + "," + expr
         self.tabla = dict()
-		self.arr = [self.valor]
+        self.arr = [self.valor]
         
 def p_DIM(p):
-	'''DIM  : EXPR
-			| DIM TkComa EXPR'''
-	if len(p) == 2:
-		p[0] = p[1]
-	else:
-		p[0] = cDim(p[1],p[3])
-        p[3].tabla = p[0].tabla
-        p[1].tabla = p[0].tabla
+    '''DIM  : EXPR
+            | DIM TkComa EXPR'''
+    if len(p) == 2:
+        p[0] = p[1]
+    else:
+        p[0] = cDim(p[1],p[3])
+        try:
+            p[3].tabla = p[0].tabla
+        except:
+            print("Dim-EXPR nope")
+        try:
+            p[1].tabla = p[0].tabla
+        except:
+            print("Dim-Dim Nope")
+
+class cList_Iden:
+    def __init__(self,lis_iden,opasig,ident):
+        self.type = "LISTA DE IDENTIFICADORES"
+        self.lis_iden = lis_iden
+        self.expr = opasig
+        self.ident = ident
+        self.arr = [self.lis_iden,self.expr,self.ident]
+        self.tabla = dict()
+        self.tipo=None
 
 
 class cList_Iden:
@@ -125,13 +135,17 @@ def p_LIST_IDEN(p):
     # Primer Caso:
 	if len(p) == 3:
 		p[0] = cList_Iden(None,p[2],p[1])	# Nodo parser
-        p[2].tabla = p[0].tabla							# Pasar la tabla a OPASIG por si la necesita.
-        if p[0].tipo == p[2].tipo or p[2].tipo == "":	# Verificar que los tipos esten bien.
-        	if not p[0].tabla.__contains__(p[1]):			# Verificar que no esta repetido en la tabla.
-        		p[0].tabla[p[1]] = p[0].tipo			# Si todo salio bien, agregar a la tabla.
-			else:										
-              	print("El elemento ya esta en la tabla")	# PONER FORMATO DESPUUES
-            	exit()
+        try:
+        	p[2].tabla = p[0].tabla							# Pasar la tabla a OPASIG por si la necesita.
+        except:
+          	print("Hola vale")
+        if p[2] != ""
+        	if p[0].tipo == p[2].tipo or p[2].tipo == "":	# Verificar que los tipos esten bien.
+        		if not p[0].tabla.__contains__(p[1]):			# Verificar que no esta repetido en la tabla.
+        			p[0].tabla[p[1]] = p[0].tipo			# Si todo salio bien, agregar a la tabla.
+				else:										
+              		print("El elemento ya esta en la tabla")	# PONER FORMATO DESPUUES
+            		exit()
     else:
 		p[0] = cList_Iden(p[1],p[4],p[3])				# Nodo Parser :D
         p[1].tabla = p[0].tabla							# Pasarle la tabla a la siguiente Lista de identificadores
