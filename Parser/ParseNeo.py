@@ -21,18 +21,20 @@ class cNeo:
         self.arr = [self.list_dec,self.instgen]
     def verificar(self):
         if self.list_dec != None:
-            self.list_dec.verificar()
-        self.instgen.verificar()
-        print(self.tabla)
+            self.list_dec.verificar(self.tabla)
+        self.instgen.verificar(self.tabla)
 
 def p_NEO(p):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
            | TkBegin INSTGEN TkEnd''' 
+
     global tablaSimb
     if p[1] == 'with':
-        p[0] = cNeo(p[2],p[4],tablaSimb)
+        p[0] = cNeo(p[2],p[4],tablaSimb.copy())
+        p[0].tabla = p[2].tabla
     else:
-        p[0] = cNeo(None,p[2],tablaSimb)
+        p[0] = cNeo(None,p[2],tablaSimb.copy())
+    tablaSimb.clear()
 
 def p_empty(p):
     '''empty :'''
@@ -46,16 +48,16 @@ class cList_Dec:
         self.tipo = tipo
         self.arr = [self.list_dec,self.list_iden,self.tipo]
         self.tabla = tabla
-    def verificar(self):
+    def verificar(self,tabla):
         if self.list_dec != None:
-            self.list_dec.verificar()
-        self.list_iden.verificar()
+            self.list_dec.verificar(tabla)
+        self.list_iden.verificar(tabla)
 def p_LIST_DEC(p):
     '''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
                 | LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
     global tablaSimb
     if p[1] == 'var':
-        p[0] = cList_Dec(None,p[2],p[4],tablaSimb)                # Nodo Parser                            
+        p[0] = cList_Dec(None,p[2],p[4],tablaSimb.copy())                # Nodo Parser                            
         for ident in p[2].lista:                        # Obtenemos la lista de identificadores
             if not p[0].tabla.__contains__(ident[0]):   # Si el elemento no esta, entonces verificamos el tipo
                 if ident[1]==p[4] or ident[1]=="":                      # Si el tipo es el correcto, entonces lo agregamos a la tabla
@@ -67,7 +69,7 @@ def p_LIST_DEC(p):
                 print("La variable "+str(ident[0])+" fue declarada anteriormente")
                 exit(0)
     else:  
-        p[0] = cList_Dec(p[1],p[3],p[5],tablaSimb)                # Nodo Parser
+        p[0] = cList_Dec(p[1],p[3],p[5],tablaSimb.copy())                # Nodo Parser
         p[0].tabla = p[1].tabla
         for ident in p[3].lista:                        # Obtenemos la lista de identificadores
             if not p[0].tabla.__contains__(ident[0]):   # Si el elemento no esta, entonces verificamos el tipo
@@ -79,6 +81,9 @@ def p_LIST_DEC(p):
             else:
                 print("La variable "+str(ident[0])+" fue declarada anteriormente")
                 exit(0)
+    
+    #tablaSimb = p[0].tabla.copy()
+
 
 class cTipo:
     def __init__(self,dim,tipo,tabla):
@@ -88,10 +93,10 @@ class cTipo:
         self.arr = [self.dim,self.tipo]
         self.tabla = tabla
     
-    def verificar(self):
-        self.dim.verificar()
+    def verificar(self,tabla):
+        self.dim.verificar(tabla)
         if not isinstance(self.tipo,str):
-            self.tipo.verificar()
+            self.tipo.verificar(tabla)
         
 def p_TIPO(p):
     '''TIPO : TkInt
@@ -107,13 +112,14 @@ def p_TIPO(p):
 class cDim:                                 ### ARREGLAR ESTO PARA DIMENSIONES CHEVERONGAS
     def __init__(self,dim,expr):
         self.type = "DIMENSION"
-        self.dim = dim 		
+        self.dim = dim      
         self.expr = expr
         self.arr = [self.valor]
-    def verificar():
-      	
-        self.dim.verificar()
-        self.expr.verificar
+    def verificar(self,tabla):
+        if self.dim:
+            self.dim.verificar(tabla)
+        self.expr.verificar(tabla)
+
 def p_DIM(p):
     '''DIM  : EXPR
             | DIM TkComa EXPR'''
@@ -135,13 +141,13 @@ class cList_Iden:
         self.tabla = tabla
         self.tam = tam
         
-    def verificar(self):
+    def verificar(self,tabla):
         if self.lis_iden:    
-            self.lis_iden.verificar()
+            self.lis_iden.verificar(tabla)
         if self.expr!="":
-            self.expr.verificar()
-            if self.expr.tipo != self.tabla[self.ident]:
-                print("Error de tipo: "+str(self.ident)+" de tipo "+str(self.tabla[self.ident])+" pero se le asigno "+str(self.expr.tipo))
+            self.expr.verificar(tabla)
+            if self.expr.tipo != tabla[self.ident]:
+                print("Error de tipo: "+str(self.ident)+" de tipo "+str(tabla[self.ident])+" pero se le asigno "+str(self.expr.tipo))
                 exit(0)
                   
 def p_LIST_IDEN(p):
@@ -162,8 +168,8 @@ class cOpasig:
         self.arr = [self.expr]
         self.tabla = tabla
         
-    def verificar(self):
-        self.expr.verificar()
+    def verificar(self,tabla):
+        self.expr.verificar(tabla)
         self.tipo=self.expr.tipo
         
 def p_OPASIG(p):
@@ -187,25 +193,20 @@ class cINST:
         self.arr = [self.identificador,self.exp1,self.exp2,self.exp3,self.instgen]
         self.tam = tam
         self.tabla = tabla
-    def verificar(self):
+    def verificar(self,tabla):
         if self.tam == 6:
-            self.exp3.verificar()
-            self.instgen.verificar()
+            self.exp3.verificar(tabla)
+            self.instgen.verificar(tabla)
         elif self.tam == 10:
-            self.exp2.verificar()
-            self.exp3.verificar()
-#nocheckide #if self.tabla[self.identificador] == self.exp2.tipo and self.exp2.tipo == self.exp3.tipo and self.exp2.tipo == "int":
-            self.instgen.verificar()
-            #else:
-            #    print("Error en el For")
+            self.exp2.verificar(tabla)
+            self.exp3.verificar(tabla)
+            self.instgen.verificar(tabla)
         else:
-            self.exp1.verificar()
-            self.exp2.verificar()
-            self.exp3.verificar()
-#nocheckide if self.tabla[self.identificador] == self.exp2.tipo and self.exp2.tipo == self.exp3.tipo and self.exp2.tipo == "int" and self.exp1.tipo == self.exp2.tipo:
-            self.instgen.verificar()
-            #else:
-            #    print("Error en el For")
+            self.exp1.verificar(tabla)
+            self.exp2.verificar(tabla)
+            self.exp3.verificar(tabla)
+            self.instgen.verificar(tabla)
+
 def p_INST(p):
     '''INST : ASIG
             | CONDICIONAL
@@ -232,13 +233,13 @@ class cCondicional:
         self.other = auxcond
         self.arr = [self.guardia,self.instgen,self.other]
         
-    def verificar(self):
-        self.guardia.verificar()
+    def verificar(self,tabla):
+        self.guardia.verificar(tabla)
         if self.guardia.tipo!="bool":
             print("Error, guardia de tipo "+self.guardia.tipo+" en lugar de bool.")
             exit(0)
-        self.instgen.verificar()
-        self.other.verificar()
+        self.instgen.verificar(tabla)
+        self.other.verificar(tabla)
         
 def p_CONDICIONAL(p):
     '''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
@@ -249,8 +250,8 @@ class cAuxcond:
         self.type = "Otherwise"
         self.instgen = insgen
         self.arr = [self.instgen]
-    def verificar(self):
-        self.instgen.verificar()
+    def verificar(self,tabla):
+        self.instgen.verificar(tabla)
 
 def p_AUXCOND(p):
     '''AUXCOND : TkEnd
@@ -268,9 +269,9 @@ class cAsig:
         self.expr_der = expr_der
         self.arr = [self.expr_izq,self.expr_der]
     
-    def verificar(self):
-        self.expr_izq.verificar()
-        self.expr_der.verificar()
+    def verificar(self,tabla):
+        self.expr_izq.verificar(tabla)
+        self.expr_der.verificar(tabla)
         if self.expr_izq.tipo != self.expr_der.tipo:
             print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_izq.tipo))
         
@@ -279,14 +280,21 @@ def p_ASIG(p):
     p[0] = cAsig(p[1],p[3])
 
 class cIncAlc:
-    def __init__(self,param):
+    def __init__(self,param,tabla):
         self.type = "INCORPORACION DE ALCANCE"
         self.alc = param
         self.arr = [self.alc]
+        self.tabla = tabla
+    def verificar(self,tabla):
+        self.alc.verificar()
 
 def p_INCALC(p):
     '''INCALC : NEO'''
-    p[0] = cIncAlc(p[1])
+    global tablaSimb
+    tabla = tablaSimb.copy()
+    tablaSimb.clear()
+    p[0] = cIncAlc(p[1],tabla)
+    p[0].tabla = p[1].tabla
 
 class cEntSal:
     def __init__(self,io,expr):
@@ -294,13 +302,17 @@ class cEntSal:
         self.expr = expr
         self.io = io
         self.arr = [self.expr, self.io]
-    def verificar(self):
-        self.expr.verificar()
+    def verificar(self,tabla):
+        self.expr.verificar(tabla)
+        if  self.expr.type!= "Expresion Unaria" or not tabla.__contains__(self.expr.expr):
+            print("Error en lectura.")
+            exit(0)
 
 def p_ENTRADASALIDA(p):
     '''ENTRADASALIDA : TkPrint EXPR TkPunto
                      | TkRead EXPR TkPunto'''
     p[0] = cEntSal(p[1],p[2])
+
                   
 class cSecu:
     def __init__(self,instgen,inst):
@@ -309,9 +321,9 @@ class cSecu:
         self.inst = inst
         self.arr = [self.instgen,self.inst]
     
-    def verificar(self):
-        self.instgen.verificar()
-        self.instgen.verificar()
+    def verificar(self,tabla):
+        self.instgen.verificar(tabla)
+        self.inst.verificar(tabla)
 
 def p_SECUENC(p):
     '''SECUENC : INSTGEN INST'''
@@ -333,9 +345,9 @@ class cExprBin:
         self.arr = [self.expr_izq,self.oper,self.expr_der]
         self.tabla = tabla
         self.tipo = None
-    def verificar(self):
-        self.expr_izq.verificar()
-        self.expr_der.verificar()
+    def verificar(self,tabla):
+        self.expr_izq.verificar(tabla)
+        self.expr_der.verificar(tabla)
         if self.oper in {"+","-","*","/","%"}:
             if self.expr_der.tipo == "int" and self.expr_izq.tipo == "int":
                 self.tipo = "int"
@@ -365,7 +377,7 @@ class cExprUn:
         self.tabla = tabla
         self.tam = tam
 
-    def verificar(self):
+    def verificar(self,tabla):
         # CASO LITERALES O ID
         if self.tam == 2:           # Caso literales o TkId
             if isinstance(self.expr,str) and self.oper == None:
@@ -376,8 +388,8 @@ class cExprUn:
                 elif self.expr == "True" or self.expr == "False":
                     self.tipo = "bool"
                 else:
-                    if self.tabla.__contains__(self.expr):
-                        self.tipo = self.tabla[self.expr]
+                    if tabla.__contains__(self.expr):
+                        self.tipo = tabla[self.expr]
                     else:
                         print("Error, "+str(self.expr)+" no fue declarada")
                         exit(0)
@@ -555,9 +567,10 @@ def imprimir(result,i):
                     else:
                         if(elem.type):
                             imprimir(elem,i+2)
+result.verificar()
+#print(result.instgen.instgen.alc.instgen.instgen.tabla,"lol")
 try:
     imprimir(result,0)
     print("end")
 except:
     pass
-print(result.verificar())
