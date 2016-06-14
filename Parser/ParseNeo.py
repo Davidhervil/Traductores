@@ -380,17 +380,17 @@ def p_EXPR(p):
             | EXPR TkIgual EXPR'''
     global tablaSimb
     if len(p)==2:
-        p[0]=cExprUn(p[1],None,len(p))
+        p[0]=cExprUn(p[1],None,tablaSimb,len(p))
     elif len(p)==4:
         if p[1]!="(":
             p[0] = cExprBin(p[1],p[2],p[3],tablaSimb)
         else:
-            p[0] = cExprUn(p[2],None,len(p))            
+            p[0] = cExprUn(p[2],None,tablaSimb,len(p))            
     elif len(p)==3:
         if p[2]=="++" or p[2]=="--":
-            p[0] = cExprUn(p[1],p[2],len(p))
+            p[0] = cExprUn(p[1],p[2],tablaSimb,len(p))
         else:
-            p[0] = cExprUn(p[2],p[1],len(p)) 
+            p[0] = cExprUn(p[2],p[1],tablaSimb,len(p)) 
               
 
 def p_LITER(p):
@@ -493,9 +493,9 @@ def imprimir(result,i):
                     else:
                         if(elem.type):
                             imprimir(elem,i+2)
+result.verificar()
 try:
     imprimir(result,0)
     print("end")
 except:
     pass
-print(result.verificar())
