@@ -189,23 +189,23 @@ class cINST:
         self.tabla = tabla
     def verificar(self):
         if self.tam == 6:
-            self.exp3.validar()
-            self.instgen.validar()
+            self.exp3.verificar()
+            self.instgen.verificar()
         elif self.tam == 10:
-            self.exp2.validar()
-            self.exp3.validar()
-            if self.tabla[self.identificador] == self.exp2.tipo and self.exp2.tipo == self.exp3.tipo and self.exp2.tipo == "int":
-                self.instgen.validar()
-            else:
-                print("Error en el For")
+            self.exp2.verificar()
+            self.exp3.verificar()
+#nocheckide #if self.tabla[self.identificador] == self.exp2.tipo and self.exp2.tipo == self.exp3.tipo and self.exp2.tipo == "int":
+            self.instgen.verificar()
+            #else:
+            #    print("Error en el For")
         else:
-            self.exp1.validar()
-            self.exp2.validar()
-            self.exp3.validar()
-            if self.tabla[self.identificador] == self.exp2.tipo and self.exp2.tipo == self.exp3.tipo and self.exp2.tipo == "int" and self.exp1.tipo == self.exp2.tipo:
-                self.instgen.validar()
-            else:
-                print("Error en el For")
+            self.exp1.verificar()
+            self.exp2.verificar()
+            self.exp3.verificar()
+#nocheckide if self.tabla[self.identificador] == self.exp2.tipo and self.exp2.tipo == self.exp3.tipo and self.exp2.tipo == "int" and self.exp1.tipo == self.exp2.tipo:
+            self.instgen.verificar()
+            #else:
+            #    print("Error en el For")
 def p_INST(p):
     '''INST : ASIG
             | CONDICIONAL
@@ -237,7 +237,7 @@ class cCondicional:
         if self.guardia.tipo!="bool":
             print("Error, guardia de tipo "+self.guardia.tipo+" en lugar de bool.")
             exit(0)
-        self.instgen.verificar.()
+        self.instgen.verificar()
         self.other.verificar()
         
 def p_CONDICIONAL(p):
@@ -272,7 +272,7 @@ class cAsig:
         self.expr_izq.verificar()
         self.expr_der.verificar()
         if self.expr_izq.tipo != self.expr_der.tipo:
-            print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_izq.tipo)
+            print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_izq.tipo))
         
 def p_ASIG(p):
     '''ASIG : EXPR TkAsignacion EXPR TkPunto'''
@@ -377,7 +377,7 @@ class cExprUn:
                     self.tipo = "bool"
                 else:
                     if self.tabla.__contains__(self.expr):
-                        self.tipo = p[i].tabla[self.expr]
+                        self.tipo = self.tabla[self.expr]
                     else:
                         print("Error, "+str(self.expr)+" no fue declarada")
                         exit(0)
