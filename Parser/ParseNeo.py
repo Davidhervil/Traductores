@@ -11,6 +11,10 @@ precedence = (
 )
 global tablaSimb
 tablaSimb = dict()
+class Nodo:
+    def __init__(self,padre,tabla):
+        self.padre=None
+        self.tabla=tabla
 
 class cNeo:
     def __init__(self,lis_dec,insgen,tabla):
@@ -19,10 +23,16 @@ class cNeo:
         self.instgen = insgen
         self.tabla = tabla
         self.arr = [self.list_dec,self.instgen]
+        self.link = None
+
     def verificar(self):
         if self.list_dec != None:
             self.list_dec.verificar(self.tabla)
         self.instgen.verificar(self.tabla)
+
+    def linkear_tablas(self,link):
+        self.link = Nodo(link,self.tabla)
+        self.instgen.linkear_tablas(self.link)
 
 def p_NEO(p):
     '''NEO : TkWith LIST_DEC TkBegin INSTGEN TkEnd
@@ -193,6 +203,8 @@ class cINST:
         self.arr = [self.identificador,self.exp1,self.exp2,self.exp3,self.instgen]
         self.tam = tam
         self.tabla = tabla
+        self.link = None
+
     def verificar(self,tabla):
         if self.tam == 6:
             self.exp3.verificar(tabla)
@@ -200,12 +212,23 @@ class cINST:
         elif self.tam == 10:
             self.exp2.verificar(tabla)
             self.exp3.verificar(tabla)
-            self.instgen.verificar(tabla)
+            self.instgen.verificar(self.tabla)
         else:
             self.exp1.verificar(tabla)
             self.exp2.verificar(tabla)
             self.exp3.verificar(tabla)
-            self.instgen.verificar(tabla)
+            self.instgen.verificar(self.tabla)
+
+    def linkear_tablas(self,link):
+        if self.tam >6:
+            copia = link.tabla.copy()
+            copia[self.identificador] = "iter"
+            self.tabla = copia
+            self.link = Nodo(link,copia)
+            self.instgen.linkear_tablas(self.link)
+        else:
+            self.instgen.linkear_tablas(link)
+
 
 def p_INST(p):
     '''INST : ASIG
@@ -225,6 +248,7 @@ def p_INST(p):
     else:
         p[0] = cINST("FORconStep",p[2],p[4],p[6],p[8],p[10],tablaSimb,11)
 
+
 class cCondicional:
     def __init__(self,expr,instgen,auxcond):
         self.type = "CONDICIONAL"
@@ -240,6 +264,10 @@ class cCondicional:
             exit(0)
         self.instgen.verificar(tabla)
         self.other.verificar(tabla)
+
+    def linkear_tablas(self,link):
+        self.instgen.linkear_tablas(link)
+        self.other.linkear_tablas(link)
         
 def p_CONDICIONAL(p):
     '''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
@@ -252,6 +280,9 @@ class cAuxcond:
         self.arr = [self.instgen]
     def verificar(self,tabla):
         self.instgen.verificar(tabla)
+
+    def linkear_tablas(self):
+        self.instgen.linkear_tablas(link)
 
 def p_AUXCOND(p):
     '''AUXCOND : TkEnd
@@ -272,9 +303,13 @@ class cAsig:
     def verificar(self,tabla):
         self.expr_izq.verificar(tabla)
         self.expr_der.verificar(tabla)
-        if self.expr_izq.tipo != self.expr_der.tipo:
-            print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_izq.tipo))
-        
+        if self.expr_izq.tipo != self.expr_der.tipo or self.expr_izq.tipo=="iter":
+            print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_der.tipo))
+            exit(0)
+    
+    def linkear_tablas(self,link):
+        pass
+
 def p_ASIG(p):
     '''ASIG : EXPR TkAsignacion EXPR TkPunto'''
     p[0] = cAsig(p[1],p[3])
@@ -285,8 +320,13 @@ class cIncAlc:
         self.alc = param
         self.arr = [self.alc]
         self.tabla = tabla
+        self.link = None
+
     def verificar(self,tabla):
         self.alc.verificar()
+
+    def linkear_tablas(self,link):
+        self.alc.linkear_tablas(link)
 
 def p_INCALC(p):
     '''INCALC : NEO'''
@@ -308,6 +348,9 @@ class cEntSal:
             print("Error en lectura.")
             exit(0)
 
+    def linkear_tablas(self,link):
+        pass
+
 def p_ENTRADASALIDA(p):
     '''ENTRADASALIDA : TkPrint EXPR TkPunto
                      | TkRead EXPR TkPunto'''
@@ -320,10 +363,16 @@ class cSecu:
         self.instgen = instgen
         self.inst = inst
         self.arr = [self.instgen,self.inst]
+        self.link = None
     
     def verificar(self,tabla):
         self.instgen.verificar(tabla)
         self.inst.verificar(tabla)
+
+    def linkear_tablas(self,link):
+        self.instgen.linkear_tablas(link)
+        self.inst.linkear_tablas(link)
+
 
 def p_SECUENC(p):
     '''SECUENC : INSTGEN INST'''
@@ -516,6 +565,7 @@ def p_error(p):
     print("Syntax error at '%s'" % p.value)
     print(p.lineno)
 
+
 try:
     f = open(sys.argv[1],'r')
 except:
@@ -567,6 +617,7 @@ def imprimir(result,i):
                     else:
                         if(elem.type):
                             imprimir(elem,i+2)
+result.linkear_tablas(None)
 result.verificar()
 #print(result.instgen.instgen.alc.instgen.instgen.tabla,"lol")
 try:
