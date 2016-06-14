@@ -398,19 +398,21 @@ class cExprBin:
         self.expr_izq.verificar(tabla)
         self.expr_der.verificar(tabla)
         if self.oper in {"+","-","*","/","%"}:
-            if self.expr_der.tipo == "int" and self.expr_izq.tipo == "int":
+            if self.expr_der.tipo == "int" and self.expr_izq.tipo == "int" or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int")\
+                or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
                 self.tipo = "int"
             else:
-                print("Error de tipo, operando "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
+                print("Error de tipo, operando "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
                 exit(0)
         elif self.oper in {"/\\","\\/"}:
             if self.expr_der.tipo == "bool" and self.expr_izq.tipo == "bool":
                 self.tipo = "bool"
             else:
-                print("Error de tipo, operando "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
+                print("Error de tipo, operando "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
                 exit(0)
         elif self.oper in {"<",">","<=",">=","=","/=",}:
-            if (expr_der.tipo == "int" and expr_izq.tipo == "int") or (expr_der.tipo == "char" and expr_izq.tipo == "char") :
+            if (expr_der.tipo == "int" and expr_izq.tipo == "int") or (expr_der.tipo == "char" and expr_izq.tipo == "char")\
+             or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
                 self.tipo = "bool"
             else:
                 print("Error de tipo, operando "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
@@ -446,7 +448,7 @@ class cExprUn:
         elif self.tam == 3:
             self.expr.verificar()
             if self.oper=="-":
-                if self.expr.tipo == "int":
+                if self.expr.tipo == "int" or self.expr.tipo == "iter" :
                     self.tipo = "int" 
                 else:
                     print("Error de tipo, operando "+self.expr.tipo+" como int.")
