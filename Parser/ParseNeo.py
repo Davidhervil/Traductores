@@ -87,6 +87,12 @@ class cTipo:
         self.tipo = tipo
         self.arr = [self.dim,self.tipo]
         self.tabla = tabla
+    
+    def verificar(self):
+        self.dim.verificar()
+        if not isinstance(self.tipo,str):
+            self.tipo.verificar()
+        
 def p_TIPO(p):
     '''TIPO : TkInt
             | TkBool
@@ -101,13 +107,19 @@ def p_TIPO(p):
 class cDim:                                 ### ARREGLAR ESTO PARA DIMENSIONES CHEVERONGAS
     def __init__(self,dim,expr):
         self.type = "DIMENSION"
-        self.valor = dim + "," + expr
+        self.dim = dim 		
+        self.expr = expr
         self.arr = [self.valor]
+    def verificar():
+      	
+        self.dim.verificar()
+        self.expr.verificar
 def p_DIM(p):
     '''DIM  : EXPR
             | DIM TkComa EXPR'''
     if len(p) == 2:
-        p[0] = p[1]
+        p[0] = p[1] #Esto es correcto ? porque pareciera que no tuviera Dim. Ademas, monascal dijo que hay que veriicar numero de dimensiones
+        #si tenemos un arreglo de dimensiones eso se facilita mucho
     else:
         p[0] = cDim(p[1],p[3])
 
@@ -165,7 +177,7 @@ def p_OPASIG(p):
 
 
 class cINST:
-    def __init__(self,tipoAux,ident,exp1,exp2,exp3,insgen):
+    def __init__(self,tipoAux,ident,exp1,exp2,exp3,insgen,tabla,tam):
         self.type = tipoAux
         self.identificador = ident
         self.exp1 = exp1
@@ -173,6 +185,27 @@ class cINST:
         self.exp3 = exp3
         self.instgen = insgen
         self.arr = [self.identificador,self.exp1,self.exp2,self.exp3,self.instgen]
+        self.tam = tam
+        self.tabla = tabla
+    def verificar(self):
+        if self.tam == 6:
+            self.exp3.validar()
+            self.instgen.validar()
+        elif self.tam == 10:
+            self.exp2.validar()
+            self.exp3.validar()
+            if self.tabla[self.identificador] == exp2.tipo and exp2.tipo == exp3.tipo and exp2.tipo == "int":
+                self.instgen.validar()
+            else:
+                print("Error en el For")
+        else:
+            self.exp1.validar()
+            self.exp2.validar()
+            self.exp3.validar()
+            if self.tabla[self.identificador] == exp2.tipo and exp2.tipo == exp3.tipo and exp2.tipo == "int" and exp1.tipo == exp2.tipo:
+                self.instgen.validar()
+            else:
+                print("Error en el For")
 def p_INST(p):
     '''INST : ASIG
             | CONDICIONAL
@@ -181,14 +214,15 @@ def p_INST(p):
             | TkWhile EXPR TkHacer INSTGEN TkEnd
             | INCALC
             | ENTRADASALIDA'''
+    global tablaSimb
     if len(p) == 2:
         p[0] = p[1]
     elif len(p) == 6:
-        p[0] = cINST("ciclo indefinido",None,None,None,p[2],p[4])
+        p[0] = cINST("ciclo indefinido",None,None,None,p[2],p[4],tablaSimb,6)
     elif len(p) ==10:
-        p[0] = cINST("FOR",p[2],None,p[4],p[6],p[8])
+        p[0] = cINST("FOR",p[2],None,p[4],p[6],p[8],tablaSimb,10)
     else:
-        p[0] = cINST("FORconStep",p[2],p[4],p[6],p[8],p[10])
+        p[0] = cINST("FORconStep",p[2],p[4],p[6],p[8],p[10],tablaSimb,11)
 
 class cCondicional:
     def __init__(self,expr,instgen,auxcond):
