@@ -646,6 +646,10 @@ class cLitMat:
     def verificar(self,tabla):
         if self.auxlitmat:
             self.auxlitmat.verificar(tabla)
+            if not (isinstance(self.auxlitmat,cLitMat) or isinstance(self.auxlitmat,cAuxLitMat)):
+                self.tipobase = self.auxlitmat.tipo
+            else:
+                self.tipobase = self.auxlitmat.tipobase
 
     def linkear_tablas(self,link):
         if self.auxlitmat:
@@ -684,6 +688,25 @@ class cAuxLitMat:
                     or self.auxlitmat.tipobase=="vacio")):
                     print("EEORROR")
                     exit(0)
+            else:
+                print("EEORROR no son mismo tipo")
+                exit(0)
+            self.tipobase = self.auxlitmat.tipobase
+        else:
+            if isinstance(self.auxlitmat,cLitMat) or isinstance(self.auxlitmat,cAuxLitMat):
+                print("EEORROR no son mismo tipo")
+                exit(0)
+            else:
+                if self.expr.tipo != self.auxlitmat.tipo:
+                    if self.auxlitmat.tipo =="iter" and self.expr.tipo=="int":
+                        pass
+                    elif self.auxlitmat.tipo =="int" and self.expr.tipo=="iter":
+                        pass
+                    else:
+                        print("Roto")
+                        exit(0)
+            self.tipobase = self.expr.tipo
+
 
     def linkear_tablas(self,link):
         self.expr.linkear_tablas(link)
@@ -697,14 +720,11 @@ def p_AUXLITMAT(p):
     else:
         p[0] = cAuxLitMat(p[1],p[3])
         if isinstance(p[3],cAuxLitMat):
-            p[0].tipobase = p[3].tipobase
             p[0].numDim = 1 + p[3].numDim
         elif isinstance(p[3],cLitMat):
             p[0].numDim = 1 + p[3].numDim
-            p[0].tipobase = p[3].tipobase
         else:
             p[0].numDim = 1
-            p[0].tipobase = p[1].tipo
 
 
 class cIndexMat:
