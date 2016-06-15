@@ -196,7 +196,7 @@ class cList_Iden:
             self.expr.verificar(tabla)
             if not isinstance(self.expr.expr,cLitMat):
                 if self.expr.tipo != tabla[self.ident]:
-                    print("Error de tipo: "+str(self.ident)+" de tipo "+str(tabla[self.ident])+" pero se le asigno "+str(self.expr))
+                    print("Error de tipo: "+str(self.ident)+" de tipo "+str(tabla[self.ident])+" pero se le asigno "+str(self.expr.tipo))
                     exit(0)
             else:
                 if not (self.expr.tipo.numDim == tabla[self.ident].numDim and (self.expr.tipo.tipobase==tabla[self.ident].tipobase or self.expr.tipo.tipobase=="vacio")):
@@ -664,6 +664,9 @@ def p_LITMAT(p):
         elif isinstance(p[2],cLitMat):
             p[0].numDim = 1 + p[2].numDim
             p[0].tipobase = p[2].tipobase 
+        else:
+            p[0].tipobase = p[2].tipo
+            p[0].numDim = 1
 
 class cAuxLitMat:
     def __init__(self,expr,auxlitmat):
