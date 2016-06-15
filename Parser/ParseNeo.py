@@ -11,9 +11,10 @@ precedence = (
 )
 global tablaSimb
 tablaSimb = dict()
+superAUX = []
 class Nodo:
     def __init__(self,padre,tabla):
-        self.padre=None
+        self.padre=padre
         self.tabla=tabla
 
 class cNeo:
@@ -27,11 +28,13 @@ class cNeo:
 
     def verificar(self):
         if self.list_dec != None:
-            self.list_dec.verificar(self.tabla)
-        self.instgen.verificar(self.tabla)
+            self.list_dec.verificar(self.link.tabla)
+        self.instgen.verificar(self.link.tabla)
 
     def linkear_tablas(self,link):
         self.link = Nodo(link,self.tabla)
+        if self.list_dec:
+            self.list_dec.linkear_tablas(self.link)   # FALTA IF
         self.instgen.linkear_tablas(self.link)
 
 def p_NEO(p):
@@ -62,6 +65,14 @@ class cList_Dec:
         if self.list_dec != None:
             self.list_dec.verificar(tabla)
         self.list_iden.verificar(tabla)
+    
+    def linkear_tablas(self,link):
+        if self.list_dec:
+            self.list_dec.linkear_tablas(link)
+        self.list_iden.linkear_tablas(link)
+        if not isinstance(self.tipo,str):
+            self.tipo.linkear_tablas(link)
+
 def p_LIST_DEC(p):
     '''LIST_DEC : TkVar LIST_IDEN TkDosPuntos TIPO
                 | LIST_DEC TkVar LIST_IDEN TkDosPuntos TIPO'''
@@ -95,18 +106,25 @@ def p_LIST_DEC(p):
     #tablaSimb = p[0].tabla.copy()
 
 
-class cTipo:
+class cMatriz:
     def __init__(self,dim,tipo,tabla):
         self.type = "Matriz"
         self.dim = dim
         self.tipo = tipo
         self.arr = [self.dim,self.tipo]
         self.tabla = tabla
+        self.numDim = 0
+        self.tipobase = None
     
     def verificar(self,tabla):
         self.dim.verificar(tabla)
         if not isinstance(self.tipo,str):
             self.tipo.verificar(tabla)
+
+    def linkear_tablas(self,link):
+        self.dim.linkear_tablas(link)
+        if not isinstance(self.tipo,str):
+            self.tipo.linkear_tablas(link)
         
 def p_TIPO(p):
     '''TIPO : TkInt
@@ -117,18 +135,34 @@ def p_TIPO(p):
     if len(p) == 2:
         p[0] = p[1]                         #### QUIZAS HAGA FALTA HACERLO CLASE TAMBIEN (COMO EN EXPRESION)
     else:
-        p[0] = cTipo(p[3],p[6],tablaSimb )
+        p[0] = cMatriz(p[3],p[6],tablaSimb )
+        if isinstance(p[3],cDim):
+            p[0].numDim = p[3].numDim
+        else:
+            p[0].numDim = 1
+
+        if isinstance(p[6],cMatriz):
+            p[0].numDim += p[6].numDim
+            p[0].tipobase = p[6].tipobase
+        else:
+            p[0].tipobase = p[6]
 
 class cDim:                                 ### ARREGLAR ESTO PARA DIMENSIONES CHEVERONGAS
     def __init__(self,dim,expr):
         self.type = "DIMENSION"
         self.dim = dim      
         self.expr = expr
-        self.arr = [self.valor]
+        self.arr = [self.dim,self.expr]
+        self.numDim = 0
+    
     def verificar(self,tabla):
         if self.dim:
             self.dim.verificar(tabla)
         self.expr.verificar(tabla)
+
+    def linkear_tablas(self,link):
+        self.dim.linkear_tablas(link)
+        self.expr.linkear_tablas(link)
 
 def p_DIM(p):
     '''DIM  : EXPR
@@ -138,6 +172,10 @@ def p_DIM(p):
         #si tenemos un arreglo de dimensiones eso se facilita mucho
     else:
         p[0] = cDim(p[1],p[3])
+        if isinstance(p[1],cDim):
+            p[0].numDim = 1 + p[1].numDim
+        else:
+            p[0].numDim = 2
 
 
 class cList_Iden:
@@ -156,10 +194,24 @@ class cList_Iden:
             self.lis_iden.verificar(tabla)
         if self.expr!="":
             self.expr.verificar(tabla)
-            if self.expr.tipo != tabla[self.ident]:
-                print("Error de tipo: "+str(self.ident)+" de tipo "+str(tabla[self.ident])+" pero se le asigno "+str(self.expr.tipo))
-                exit(0)
-                  
+            if not isinstance(self.expr.expr,cLitMat):
+                if self.expr.tipo != tabla[self.ident]:
+                    print("Error de tipo: "+str(self.ident)+" de tipo "+str(tabla[self.ident])+" pero se le asigno "+str(self.expr))
+                    exit(0)
+            else:
+                if not (self.expr.tipo.numDim == tabla[self.ident].numDim and (self.expr.tipo.tipobase==tabla[self.ident].tipobase or self.expr.tipo.tipobase=="vacio")):
+                    print("Error de tipo: "+str(self.ident)+" de tipo Matriz de "\
+                        +str(tabla[self.ident].numDim)+" dimensiones y tipo base "\
+                        +str(tabla[self.ident].tipobase)+", pero se le asigno Matriz de "+str(self.expr.tipo.numDim)\
+                        +" dimensiones y tipo base "+str(self.expr.tipo.tipobase))
+                    exit(0)
+    
+    def linkear_tablas(self,link):
+        if self.lis_iden:
+            self.lis_iden.linkear_tablas(link)
+        if self.expr!="":
+            self.expr.linkear_tablas(link)
+
 def p_LIST_IDEN(p):
     '''LIST_IDEN : TkId OPASIG
                  | LIST_IDEN TkComa TkId OPASIG'''
@@ -177,10 +229,17 @@ class cOpasig:
         self.expr = expr
         self.arr = [self.expr]
         self.tabla = tabla
+        self.tipo = None
         
     def verificar(self,tabla):
         self.expr.verificar(tabla)
-        self.tipo=self.expr.tipo
+        if not isinstance(self.expr,cLitMat):
+            self.tipo=self.expr.tipo
+        else:
+            self.tipo = self.expr
+
+    def linkear_tablas(self,link):
+        self.expr.linkear_tablas(link)
         
 def p_OPASIG(p):
     '''OPASIG : TkAsignacion EXPR
@@ -226,8 +285,16 @@ class cINST:
             self.tabla = copia
             self.link = Nodo(link,copia)
             self.instgen.linkear_tablas(self.link)
+            if self.exp1:
+                self.exp1.linkear_tablas(link)
+            if self.exp2:
+                self.exp2.linkear_tablas(link)                
+            if self.exp3:
+                self.exp3.linkear_tablas(link)
         else:
+            self.exp3.linkear_tablas(link)
             self.instgen.linkear_tablas(link)
+
 
 
 def p_INST(p):
@@ -263,11 +330,14 @@ class cCondicional:
             print("Error, guardia de tipo "+self.guardia.tipo+" en lugar de bool.")
             exit(0)
         self.instgen.verificar(tabla)
-        self.other.verificar(tabla)
+        if not isinstance(self.other,str):
+            self.other.verificar(tabla)
 
     def linkear_tablas(self,link):
+        self.guardia.linkear_tablas(link)
         self.instgen.linkear_tablas(link)
-        self.other.linkear_tablas(link)
+        if not isinstance(self.other,str):
+            self.other.linkear_tablas(link)
         
 def p_CONDICIONAL(p):
     '''CONDICIONAL : TkIf EXPR TkHacer INSTGEN AUXCOND'''
@@ -308,7 +378,8 @@ class cAsig:
             exit(0)
     
     def linkear_tablas(self,link):
-        pass
+        self.expr_izq.linkear_tablas(link)
+        self.expr_der.linkear_tablas(link)
 
 def p_ASIG(p):
     '''ASIG : EXPR TkAsignacion EXPR TkPunto'''
@@ -342,14 +413,29 @@ class cEntSal:
         self.expr = expr
         self.io = io
         self.arr = [self.expr, self.io]
+        self.link = None
     def verificar(self,tabla):
         self.expr.verificar(tabla)
-        if  self.expr.type!= "Expresion Unaria" or not tabla.__contains__(self.expr.expr):
-            print("Error en lectura.")
-            exit(0)
+        if self.io == "read": #INCOMPLETO FALTA INDEXACION
+            if  self.expr.type!= "Expresion Unaria":
+                exit(0)
+            elif not tabla.__contains__(self.expr.expr):
+                auxnodo = self.link
+                while(auxnodo!=None):
+                    if auxnodo.tabla.__contains__(self.expr.expr):
+                        self.tipo = auxnodo.tabla[self.expr.expr]
+                        break
+                    else:
+                        auxnodo = auxnodo.padre
+                if auxnodo==None:
+                    print("Error, "+str(self.expr.expr)+" no fue declarada")
+                    exit(0)
+        else:
+            self.expr.verificar(tabla)
 
     def linkear_tablas(self,link):
-        pass
+        self.link = link
+        self.expr.linkear_tablas(link)
 
 def p_ENTRADASALIDA(p):
     '''ENTRADASALIDA : TkPrint EXPR TkPunto
@@ -402,21 +488,25 @@ class cExprBin:
                 or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
                 self.tipo = "int"
             else:
-                print("Error de tipo, operando "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
+                print("Error de tipo, "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
                 exit(0)
         elif self.oper in {"/\\","\\/"}:
             if self.expr_der.tipo == "bool" and self.expr_izq.tipo == "bool":
                 self.tipo = "bool"
             else:
-                print("Error de tipo, operando "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
+                print("Error de tipo, "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
                 exit(0)
         elif self.oper in {"<",">","<=",">=","=","/=",}:
-            if (expr_der.tipo == "int" and expr_izq.tipo == "int") or (expr_der.tipo == "char" and expr_izq.tipo == "char")\
+            if (self.expr_der.tipo == "int" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "char" and self.expr_izq.tipo == "char")\
              or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
                 self.tipo = "bool"
             else:
-                print("Error de tipo, operando "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
+                print("Error de tipo, "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
                 exit(0)
+
+    def linkear_tablas(self,link):
+        self.expr_izq.linkear_tablas(link)
+        self.expr_der.linkear_tablas(link)
 
 class cExprUn:
     def __init__(self,expr,oper,tabla,tam):
@@ -427,6 +517,7 @@ class cExprUn:
         self.tipo = None
         self.tabla = tabla
         self.tam = tam
+        self.link = None
 
     def verificar(self,tabla):
         # CASO LITERALES O ID
@@ -439,14 +530,23 @@ class cExprUn:
                 elif self.expr == "True" or self.expr == "False":
                     self.tipo = "bool"
                 else:
-                    if tabla.__contains__(self.expr):
-                        self.tipo = tabla[self.expr]
-                    else:
+                    #if tabla.__contains__(self.expr):
+                    #    self.tipo = tabla[self.expr]
+                    #else:
+                    auxnodo = self.link
+                    while(auxnodo!=None):
+                        if auxnodo.tabla.__contains__(self.expr):
+                            self.tipo = auxnodo.tabla[self.expr]
+                            break
+                        else:
+                            auxnodo = auxnodo.padre
+                    if auxnodo==None:
                         print("Error, "+str(self.expr)+" no fue declarada")
                         exit(0)
+
         # CASO UNARIOS
         elif self.tam == 3:
-            self.expr.verificar()
+            self.expr.verificar(tabla)
             if self.oper=="-":
                 if self.expr.tipo == "int" or self.expr.tipo == "iter" :
                     self.tipo = "int" 
@@ -474,8 +574,13 @@ class cExprUn:
         
         # CASO PARENTESIS.
         else:                       # Caso parentesis.
-            self.expr.verificar()
+            self.expr.verificar(tabla)
             self.tipo = self.expr.tipo
+
+    def linkear_tablas(self,link):
+        self.link = link
+        if not isinstance(self.expr,str):
+            self.expr.linkear_tablas(link)
 
 def p_EXPR(p):
     '''EXPR : LITER
@@ -505,7 +610,10 @@ def p_EXPR(p):
             | EXPR TkIgual EXPR'''
     global tablaSimb
     if len(p)==2:
-        p[0]=cExprUn(p[1],None,tablaSimb,len(p))
+        if not isinstance(p[1],cLitMat):
+            p[0]=cExprUn(p[1],None,tablaSimb,len(p))
+        else:
+            p[0]=p[1]
     elif len(p)==4:
         if p[1]!="(":
             p[0] = cExprBin(p[1],p[2],p[3],tablaSimb)
@@ -529,20 +637,54 @@ def p_LITER(p):
 class cLitMat:
     def __init__(self,auxlitmat):
         self.type = "Literal Matriz"
-        self.valor = "{" + auxlitmat + "}"
-        self.arr = [self.valor]
+        self.auxlitmat = auxlitmat
+        self.arr = [self.auxlitmat]
+        self.numDim = 0
+        self.tipobase = "vacio"
+        self.link = None
+
+    def verificar(self,tabla):
+        if self.auxlitmat:
+            self.auxlitmat.verificar(tabla)
+
+    def linkear_tablas(self,link):
+        if self.auxlitmat:
+            self.auxlitmat.linkear_tablas(link)
 
 def p_LITMAT(p):
     '''LITMAT : TkLlaveAbre AUXLITMAT TkLlaveCierra
               | TkLlaveAbre TkLlaveCierra'''
-    if len(p)==2:
-        p[0] = p[1] + p[2]
+    if len(p)==3:
+        p[0] = cLitMat(None)
     else:
         p[0] = cLitMat(p[2])
+        if isinstance(p[2],cAuxLitMat):
+            p[0].numDim = 1 + p[2].numDim
+            p[0].tipobase = p[2].tipobase 
+        elif isinstance(p[2],cLitMat):
+            p[0].numDim = 1 + p[2].numDim
+            p[0].tipobase = p[2].tipobase 
 
 class cAuxLitMat:
     def __init__(self,expr,auxlitmat):
-        self.val = expr + "," + auxlitmat
+        self.type = "AUXLITMAT"
+        self.expr = expr
+        self.auxlitmat = auxlitmat
+        self.arr = [self.expr,self.auxlitmat]
+        self.numDim = 0
+        self.tipobase = "vacio"
+
+    def verificar(self,tabla):
+        if isinstance(self.expr,cLitMat):
+            if isinstance(self.auxlitmat,cLitMat) or isinstance(self.auxlitmat,cAuxLitMat):
+                if not(self.expr.numDim==self.auxlitmat.numDim and (self.expr.tipobase==self.auxlitmat.tipobase or self.expr.tipobase=="vacio"\
+                    or self.auxlitmat.tipobase=="vacio")):
+                    print("EEORROR")
+                    exit(0)
+
+    def linkear_tablas(self,link):
+        self.expr.linkear_tablas(link)
+        self.auxlitmat.linkear_tablas(link)
 
 def p_AUXLITMAT(p):
     '''AUXLITMAT : EXPR TkComa AUXLITMAT
@@ -550,7 +692,17 @@ def p_AUXLITMAT(p):
     if len(p)==2:
         p[0] = p[1]
     else:
-        p[0] = cAuxLitMat(p[1],p[3]).val
+        p[0] = cAuxLitMat(p[1],p[3])
+        if isinstance(p[3],cAuxLitMat):
+            p[0].tipobase = p[3].tipobase
+            p[0].numDim = 1 + p[3].numDim
+        elif isinstance(p[3],cLitMat):
+            p[0].numDim = 1 + p[3].numDim
+            p[0].tipobase = p[3].tipobase
+        else:
+            p[0].numDim = 1
+            p[0].tipobase = p[1].tipo
+
 
 class cIndexMat:
     def __init__(self,expr,dim):
@@ -565,7 +717,8 @@ def p_INDEXMAT (p):
 
 def p_error(p):
     print("Syntax error at '%s'" % p.value)
-    print(p.lineno)
+    print("En la linea "+str(p.lineno))
+    exit(0)
 
 
 try:
@@ -604,7 +757,7 @@ def imprimir(result,i):
             print((i+2)*" "+"EXPRESION IZQ:")
             imprimir(result.expr_izq,i+2+2)
             print((i+2)*" "+"OPERADOR: "+result.oper)
-            print((i+2)*" "+"EXPRESION IZQ:")
+            print((i+2)*" "+"EXPRESION DER:")
             imprimir(result.expr_der,i+2+2)
             j = 0
             ITERADOR[0] = 3  
@@ -621,9 +774,17 @@ def imprimir(result,i):
                             imprimir(elem,i+2)
 result.linkear_tablas(None)
 result.verificar()
+print(result.tabla)
 #print(result.instgen.instgen.alc.instgen.instgen.tabla,"lol")
 try:
     imprimir(result,0)
     print("end")
 except:
     pass
+
+for i in range(0,len(superAUX)):
+    print(superAUX[i].tabla)
+    if superAUX[i].padre != None:
+        print(superAUX[i].padre.tabla)
+    else:
+        print(superAUX[i].padre)
