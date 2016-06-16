@@ -724,11 +724,11 @@ def p_AUXLITMAT(p):
     else:
         p[0] = cAuxLitMat(p[1],p[3])
         if isinstance(p[3],cAuxLitMat):
-            p[0].numDim = 1 + p[3].numDim
+            p[0].numDim = p[3].numDim
         elif isinstance(p[3],cLitMat):
-            p[0].numDim = 1 + p[3].numDim
+            p[0].numDim = p[3].numDim
         else:
-            p[0].numDim = 1
+            p[0].numDim = 0
 
 
 class cIndexMat:
