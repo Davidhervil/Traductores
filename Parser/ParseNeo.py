@@ -684,6 +684,8 @@ class cAuxLitMat:
         self.tipobase = "vacio"
 
     def verificar(self,tabla):
+        self.expr.verificar(tabla)
+        self.auxlitmat.verificar(tabla)
         if isinstance(self.expr,cLitMat):
             if isinstance(self.auxlitmat,cLitMat) or isinstance(self.auxlitmat,cAuxLitMat):
                 if not(self.expr.numDim==self.auxlitmat.numDim and (self.expr.tipobase==self.auxlitmat.tipobase or self.expr.tipobase=="vacio"\
@@ -693,14 +695,13 @@ class cAuxLitMat:
             else:
                 print("EEORROR no son mismo tipo")
                 exit(0)
+            
             self.tipobase = self.auxlitmat.tipobase
         else:
             if isinstance(self.auxlitmat,cLitMat) or isinstance(self.auxlitmat,cAuxLitMat):
                 print("EEORROR no son mismo tipo")
                 exit(0)
             else:
-                self.expr.verificar(tabla)
-                self.auxlitmat.verificar(tabla)
                 if self.expr.tipo != self.auxlitmat.tipo:
                     if self.auxlitmat.tipo =="iter" and self.expr.tipo=="int":
                         pass
