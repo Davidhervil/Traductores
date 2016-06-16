@@ -373,9 +373,18 @@ class cAsig:
     def verificar(self,tabla):
         self.expr_izq.verificar(tabla)
         self.expr_der.verificar(tabla)
-        if self.expr_izq.tipo != self.expr_der.tipo or self.expr_izq.tipo=="iter":
-            print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_der.tipo))
-            exit(0)
+        if not isinstance(self.expr_der,cLitMat):
+            if self.expr_izq.tipo != self.expr_der.tipo or self.expr_izq.tipo=="iter":
+                print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_der.tipo))
+                exit(0)
+        else:
+            if not isinstance(self.expr_izq.tipo, cMatriz):
+                print("Error asignando literal de matriz a "+self.expr_izq.tipo)
+            else:
+                if not(self.expr_izq.tipo.numDim==self.expr_der.numDim and (self.expr_izq.tipo.tipobase==self.expr_der.tipobase or self.expr_izq.tipo.tipobase=="vacio"\
+                    or self.expr_der.tipobase=="vacio")):
+                    print("EEORROR")
+                    exit(0)
     
     def linkear_tablas(self,link):
         self.expr_izq.linkear_tablas(link)
