@@ -525,7 +525,7 @@ class cExprUn:
             if isinstance(self.expr,str) and self.oper == None:
                 if self.expr.isnumeric():
                     self.tipo = "int"
-                elif self.expr[0] == '\'':   
+                elif self.expr[0] == '\'':  
                     self.tipo = "char"
                 elif self.expr == "True" or self.expr == "False":
                     self.tipo = "bool"
@@ -543,6 +543,8 @@ class cExprUn:
                     if auxnodo==None:
                         print("Error, "+str(self.expr)+" no fue declarada")
                         exit(0)
+            elif isinstance(self.expr,cLitMat):#literal de matriz
+                self.tipo = self.expr.tipobase
 
         # CASO UNARIOS
         elif self.tam == 3:
@@ -697,6 +699,8 @@ class cAuxLitMat:
                 print("EEORROR no son mismo tipo")
                 exit(0)
             else:
+                self.expr.verificar(tabla)
+                self.auxlitmat.verificar(tabla)
                 if self.expr.tipo != self.auxlitmat.tipo:
                     if self.auxlitmat.tipo =="iter" and self.expr.tipo=="int":
                         pass
