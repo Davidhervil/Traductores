@@ -9,7 +9,22 @@ GramNeo.py
  Descripcion: Objetos empleados para construir el AST junto a metodos que
  permiten detectar errores de tipo estaticos
 """
+global sal
+sal = []
+def mete(dic):
+    global sal
+    sal.append(dic)
 
+def a_print(a):
+    for i in a:
+        le_print(i)
+
+def le_print(dic):
+    print("Tabla")
+    for i in dic:
+        print(i,":",dic[i])
+    print("-------")
+    print()
 #---------------------------------------------------------------------------#
 #                                   NODO                                    #
 #---------------------------------------------------------------------------#
@@ -34,6 +49,7 @@ class cNeo:
         if self.list_dec:                               # Si hay declaraciones.
             self.list_dec.linkear_tablas(self.link)     #   Pasamos el link de alcance
         self.instgen.linkear_tablas(self.link)          # Pasamos el link a INSTGEN
+        mete(self.tabla)
     # Transicion
     def verificar(self):
         if self.list_dec != None:                       # Si hay Lista de Declaraciones
@@ -226,6 +242,7 @@ class cINST:
                 self.exp2.linkear_tablas(link)                
             if self.exp3:
                 self.exp3.linkear_tablas(link)
+            mete(self.tabla)
         else:
             self.exp3.linkear_tablas(link)
             self.instgen.linkear_tablas(link)
@@ -310,7 +327,6 @@ class cAsig:
             else:
                 if not(self.expr_izq.tipo.numDim==self.expr_der.numDim and (self.expr_izq.tipo.tipobase==self.expr_der.tipobase\
                     or self.expr_der.tipobase=="vacio")):
-                    print(self.expr_izq.tipo.numDim,self.expr_der.numDim)
                     print("EEORROR")
                     exit(0)
     
@@ -348,7 +364,6 @@ class cEntSal:
 
     # Verificaciones
     def verificar(self,tabla):
-        print("verificando enstal",self.expr)
         self.expr.verificar(tabla)
         if self.io == "read": #INCOMPLETO FALTA INDEXACION
             if  self.expr.type!= "Expresion Unaria":
@@ -407,30 +422,49 @@ class cExprBin:
     def verificar(self,tabla):
         self.expr_izq.verificar(tabla)
         self.expr_der.verificar(tabla)
-        if self.oper in {"+","-","*","/","%"}:
-            if self.expr_der.tipo == "int" and self.expr_izq.tipo == "int" or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int")\
-                or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
-                self.tipo = "int"
-            else:
-                print("Error de tipo, "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
+        if not (isinstance(self.expr_izq,cLitMat) or isinstance(self.expr_der,cLitMat)\
+            or isinstance(self.expr_izq.tipo,cMatriz) or isinstance(self.expr_der.tipo,cMatriz)):
+            if self.oper in {"+","-","*","/","%"}:
+                if self.expr_der.tipo == "int" and self.expr_izq.tipo == "int" or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int")\
+                    or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
+                    self.tipo = "int"
+                else:
+                    print("Error de tipo, "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
+                    exit(0)
+            elif self.oper in {"/\\","\\/"}:
+                if self.expr_der.tipo == "bool" and self.expr_izq.tipo == "bool":
+                    self.tipo = "bool"
+                else:
+                    print("Error de tipo, "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
+                    exit(0)
+            elif self.oper in {"<",">","<=",">=","=","/=",}:
+                if (self.expr_der.tipo == "int" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "char" and self.expr_izq.tipo == "char")\
+                or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
+                    self.tipo = "bool"
+                else:
+                    print("Error de tipo, "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
+                    exit(0)
+            elif self.oper in {"::"}:
+                if isinstance(self.expr_der.tipo,cLitMat) and isinstance(self.expr_izq.tipo,cLitMat):
+                    if self.expr_der.tipo.numDim == self.expr_izq.tipo.numDim and  self.expr_der.tipo.tipobase == self.expr_izq.tipo.tipobase: # Falta caso iter
+                        self.tipo = "matriz"
+        else:
+            if self.oper!="::":
+                print("Error no estas operando matrices")
                 exit(0)
-        elif self.oper in {"/\\","\\/"}:
-            if self.expr_der.tipo == "bool" and self.expr_izq.tipo == "bool":
-                self.tipo = "bool"
             else:
-                print("Error de tipo, "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
-                exit(0)
-        elif self.oper in {"<",">","<=",">=","=","/=",}:
-            if (self.expr_der.tipo == "int" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "char" and self.expr_izq.tipo == "char")\
-            or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
-                self.tipo = "bool"
-            else:
-                print("Error de tipo, "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
-                exit(0)
-        elif self.oper in {"::"}:
-            if isinstance(self.expr_der,cLitMat) and isinstance(self.expr_izq,cLitMat):
-                if self.expr_der.numDim == self.expr_izq.numDim and  self.expr_der.tipobase == self.expr_izq.tipobase: # Falta caso iter
-                    self.tipo = "matriz"
+                if isinstance(self.expr_izq,cLitMat):
+                    izq = self.expr_izq
+                else:    
+                    if isinstance(self.expr_izq.tipo, cMatriz):
+                        izq = self.expr_izq.tipo
+                
+                if isinstance(self.expr_der,cLitMat):
+                        der = self.expr_der
+                else:  
+                    if isinstance(self.expr_der.tipo, cMatriz):
+                        der = elf.expr_der.tipo
+
 
 
     def linkear_tablas(self,link):
@@ -607,7 +641,6 @@ class cIndexMat:
                 if isinstance(self.indice,cDim):
                     if self.mati.tipo.card_dim!=self.indice.card_dim:
                         print("Error en las dimensiones al indexar")
-                        print(1)
                         exit(0)
                     else:
                         if isinstance(self.mati.tipo.tipo, cMatriz):
@@ -618,7 +651,6 @@ class cIndexMat:
                     #print(self.mati.tipo.card_dim,"dim de la var")
                     if self.mati.tipo.card_dim!=1:
                         print("Error en las dimensiones al indexar")
-                        print(2)
                         exit(0)
                     else:
                         if isinstance(self.mati.tipo.tipo, cMatriz):
@@ -630,7 +662,6 @@ class cIndexMat:
                 if isinstance(self.indice,cDim):
                     if self.mati.tipo.numDim<self.indice.card_dim:
                         print("Error en las dimensiones al indexar")
-                        print(3)
                         exit(0)
                     elif self.mati.tipo.numDim>self.indice.card_dim:
                         diff = self.indice.card_dim
@@ -650,7 +681,6 @@ class cIndexMat:
                 else:
                     if self.mati.tipo.numDim!=1:
                         print("Error en las dimensiones al indexar")
-                        print(4)
                         exit(0)
                     else:
                         self.tipo = self.mati.tipo.tipobase 
@@ -661,7 +691,6 @@ class cIndexMat:
             if isinstance(self.indice,cDim):
                 if self.mati.numDim<self.indice.card_dim:
                     print("Error en las dimensiones al indexar")
-                    print(5)
                     exit(0)
                 elif self.mati.numDim>self.indice.card_dim:
                     diff = self.indice.card_dim
@@ -681,7 +710,6 @@ class cIndexMat:
             else:
                 if self.mati.card_dim!=1:
                     print("Error en las dimensiones al indexar")
-                    print(6)
                     exit(0)
                 else:
                     self.tipo = self.mati.tipobase 
