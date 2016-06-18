@@ -272,17 +272,41 @@ class cAsig:
         self.expr_der.verificar(tabla)
         if not isinstance(self.expr_der,cLitMat):
             if not isinstance(self.expr_izq.tipo,cMatriz):
+                if isinstance(self.expr_der.tipo,cMatriz) or isinstance(self.expr_der.tipo,cLitMat): 
+                    print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo matriz")
+                    exit(0)
                 if self.expr_izq.tipo != self.expr_der.tipo or self.expr_izq.tipo=="iter":
                     print("Error, asignando a "+str(self.expr_izq.tipo)+" tipo "+str(self.expr_der.tipo))
                     exit(0)
             else:
-                if self.expr_izq.tipo.tipobase != self.expr_der.tipo:
+                if isinstance(self.expr_der.tipo,cMatriz) or isinstance(self.expr_der.tipo,cLitMat):
+                    if self.expr_izq.tipo.numDim!=self.expr_der.tipo.numDim:
+                        print("Error, dimensiones y/o de tipo diferentes al asignar")
+                        exit(0)
+                    else:
+                        if isinstance(self.expr_der.tipo,cMatriz):
+                            izq = self.expr_izq.tipo
+                            der = self.expr_der.tipo
+                            while True:
+                                if izq.card_dim!=der.card_dim:
+                                    print("Error, dimensiones diferentes al asignar")
+                                    exit(0)
+                                izq = izq.tipo
+                                der = der.tipo
+                                if izq==None or der==None or isinstance(izq,str) or isinstance(der,str):
+                                    break
+                        if self.expr_izq.tipo.tipobase!=self.expr_der.tipo.tipobase:
+                            print("Error de tipos base en matrices al asignar")
+                            exit(0)
+
+                elif self.expr_izq.tipo.tipobase != self.expr_der.tipo:
                     if not (self.expr_izq.tipo.tipobase == "int" and self.expr_der.tipo=="iter"):
                         print("Error, asignando a "+str(self.expr_izq.tipo.tipobase)+" tipo "+str(self.expr_der.tipo))
                         exit(0)                    
         else:
             if not isinstance(self.expr_izq.tipo, cMatriz):
                 print("Error asignando literal de matriz a "+self.expr_izq.tipo)
+                exit(0)
             else:
                 if not(self.expr_izq.tipo.numDim==self.expr_der.numDim and (self.expr_izq.tipo.tipobase==self.expr_der.tipobase\
                     or self.expr_der.tipobase=="vacio")):
@@ -583,53 +607,64 @@ class cIndexMat:
                 if isinstance(self.indice,cDim):
                     if self.mati.tipo.card_dim!=self.indice.card_dim:
                         print("Error en las dimensiones al indexar")
+                        print(1)
                         exit(0)
                     else:
                         if isinstance(self.mati.tipo.tipo, cMatriz):
                             self.tipo = self.mati.tipo.tipo
                         else:
-                            self.tipo = self.mati.tipo
+                            self.tipo = self.mati.tipo.tipo
                 else:
-                    print(self.mati.tipo.card_dim,"dim de la var")
+                    #print(self.mati.tipo.card_dim,"dim de la var")
                     if self.mati.tipo.card_dim!=1:
                         print("Error en las dimensiones al indexar")
+                        print(2)
                         exit(0)
                     else:
                         if isinstance(self.mati.tipo.tipo, cMatriz):
                             self.tipo = self.mati.tipo.tipo
                         else:
-                            self.tipo = self.mati.tipo
+                            self.tipo = self.mati.tipo.tipo
+                    print("el tipo de la index quedo",self.tipo)
             elif isinstance(self.mati.tipo,cLitMat):
                 if isinstance(self.indice,cDim):
-                    if self.mati.tipo.card_dim<self.indice.card_dim:
+                    if self.mati.tipo.numDim<self.indice.card_dim:
                         print("Error en las dimensiones al indexar")
+                        print(3)
                         exit(0)
-                    elif self.mati.tipo.card_dim>self.indice.card_dim:
-                        diff = self.mati.tipo.card_dim - self.indice.card_dim
+                    elif self.mati.tipo.numDim>self.indice.card_dim:
+                        diff = self.indice.card_dim
                         intern_mat = self.mati.tipo
                         while diff!=0:
-                            if isinstance(intern_mat.auxlitmat.expr,cLitMat): #OJO que para la cuarta entrega va a ve cual es
-                                intern_mat = intern_mat.auxlitmat.expr
-                            diff -= 1
+                            if isinstance(intern_mat.auxlitmat,cAuxLitMat):
+                                if isinstance(intern_mat.auxlitmat.expr,cLitMat): #OJO que para la cuarta entrega va a ve cual es
+                                    intern_mat = intern_mat.auxlitmat.expr
+                                diff -= 1
+                            else:
+                                if isinstance(intern_mat.auxlitmat,cLitMat): #OJO que para la cuarta entrega va a ve cual es
+                                    intern_mat = intern_mat.auxlitmat
+                                diff -= 1
                         self.tipo = intern_mat
                     else:
                         self.tipo = self.mati.tipo.tipobase
                 else:
-                    if self.mati.card_dim!=1:
+                    if self.mati.tipo.numDim!=1:
                         print("Error en las dimensiones al indexar")
+                        print(4)
                         exit(0)
                     else:
-                        self.tipo = self.mati.tipobase 
+                        self.tipo = self.mati.tipo.tipobase 
             else:
                 print("Error, indexando expresion invalida")
                 exit(0)
         elif isinstance(self.mati,cLitMat):
             if isinstance(self.indice,cDim):
-                if self.mati.card_dim<self.indice.card_dim:
+                if self.mati.numDim<self.indice.card_dim:
                     print("Error en las dimensiones al indexar")
+                    print(5)
                     exit(0)
-                elif self.mati.card_dim>self.indice.card_dim:
-                    diff = self.mati.card_dim - self.indice.card_dim
+                elif self.mati.numDim>self.indice.card_dim:
+                    diff = self.indice.card_dim
                     intern_mat = self.mati
                     while diff!=0:
                         if isinstance(intern_mat.auxlitmat,cAuxLitMat):
@@ -638,7 +673,7 @@ class cIndexMat:
                             diff -= 1
                         else:
                             if isinstance(intern_mat.auxlitmat,cLitMat): #OJO que para la cuarta entrega va a ve cual es
-                                intern_mat = intern_mat.auxlitmat.expr
+                                intern_mat = intern_mat.auxlitmat
                             diff -= 1
                     self.tipo = intern_mat
                 else:
@@ -646,13 +681,13 @@ class cIndexMat:
             else:
                 if self.mati.card_dim!=1:
                     print("Error en las dimensiones al indexar")
+                    print(6)
                     exit(0)
                 else:
                     self.tipo = self.mati.tipobase 
         else:
             print("Error, indexando expresion invalida")
             exit(0)
-        
 
     def linkear_tablas(self,link):
         self.mati.linkear_tablas(link)
