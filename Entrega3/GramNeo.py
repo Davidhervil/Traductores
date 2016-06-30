@@ -56,6 +56,9 @@ class cNeo:
             self.list_dec.verificar(self.link.tabla)    #   Realizo sus verificaciones
         self.instgen.verificar(self.link.tabla)         # Verificaciones de INSTGEN
 
+    def correr(self):
+        self.list_dec.correr()
+        self.instgen.correr()
 #############################################################################
 #                           LISTA DE DECLARACIONES                          #
 #############################################################################
@@ -79,7 +82,15 @@ class cList_Dec:
         if self.list_dec != None:                   # Si hay declaraciones
             self.list_dec.verificar(tabla)          #   Realizar sus verificaciones
         self.list_iden.verificar(tabla)             # Verificaciones de identificadores
-        #self.tipo.verificar(tabla)
+        if not isinstance(self.tipo,str):    
+            self.tipo.verificar(tabla)
+
+    def correr(self):
+        if self.list_dec:
+            self.list_dec.correr()
+        self.list_iden.correr()
+        if not isinstance(self.tipo, str):
+            self.tipo.correr()
 
 #############################################################################
 #                           TIPO PARA MATRICES                              #
@@ -94,6 +105,7 @@ class cMatriz:
         self.numDim = 0
         self.tipobase = None
         self.card_dim = 0
+        self.tamaños = []
 
 
     def linkear_tablas(self,link):
@@ -110,6 +122,14 @@ class cMatriz:
         if not isinstance(self.tipo,str):   # Si tipo es matriz
             self.tipo.verificar(tabla)      #   Realizamos las verificaciones.
 
+    def correr(self):
+        self.dim.correr()
+        if isinstance(self.dim,cDim):
+            self.tamaños = self.dim.tamaños
+        else:
+            self.tamaños.append(self.dim.valor)
+        if isinstance(self.tipo,cMatriz):
+            self.tipo.correr()
 #############################################################################
 #                                   DIMENSIONES                             #
 #############################################################################
@@ -121,6 +141,7 @@ class cDim:                             # ARREGLAR ESTO PARA DIMENSIONES CHEVERO
         self.arr = [self.dim,self.expr]
         self.numDim = 0
         self.card_dim = 0
+        self.tamaños = []
 
     def linkear_tablas(self,link):
         if self.dim:                        # Si hay dimension
@@ -134,6 +155,15 @@ class cDim:                             # ARREGLAR ESTO PARA DIMENSIONES CHEVERO
     def verificar(self,tabla):
         self.dim.verificar(tabla)           # Realizamos las verificaciones de la dimension
         self.expr.verificar(tabla)          # Realizamos la verificaciones de la expresion.
+
+    def correr(self):
+        self.dim.correr()
+        self.expr.correr()
+        if isinstance(self.dim, cDim):
+            self.tamaños = self.dim.tamaños.copy()
+        else:
+            self.tamaños.append(self.dim.valor)
+        self.tamaños.append(self.expr.valor)
 
 #############################################################################
 #                           LISTA DE IDENTIFICADORES                        #
@@ -176,6 +206,14 @@ class cList_Iden:
             self.lis_iden.linkear_tablas(link)
         if self.expr!="":
             self.expr.linkear_tablas(link)
+        self.tabla = link.tabla
+
+    def correr(self):
+        if self.list_iden:
+            self.list_iden.correr()
+        if self.expr!="":
+            self.expr.correr()
+            self.tabla[self.ident] = (self.tabla[self.ident][0],self.expr.valor)
 
 #############################################################################
 #                           OPERACION DE ASIGNACION                         #
@@ -187,6 +225,7 @@ class cOpasig:
         self.arr = [self.expr]
         self.tabla = tabla
         self.tipo = None
+        self.valor = None
     # VERIFICACIONES DE TIPO    
     def verificar(self,tabla):
         self.expr.verificar(tabla)
@@ -197,6 +236,10 @@ class cOpasig:
 
     def linkear_tablas(self,link):
         self.expr.linkear_tablas(link)
+
+    def correr(self):
+        self.expr.correr()
+        self.valor = self.expr.valor
 
 #############################################################################
 #                               INSTRUCCIONES                               #
@@ -222,17 +265,26 @@ class cINST:
         elif self.tam == 10:
             self.exp2.verificar(tabla)
             self.exp3.verificar(tabla)
+            if not((self.exp2.tipo=="int" and self.exp3.tipo=="int") or (self.exp2.tipo=="iter" and self.exp3.tipo=="int")\
+             or (self.exp2.tipo=="int" and self.exp3.tipo=="iter") or (self.exp2.tipo=="iter" and self.exp3.tipo=="iter") ):
+                print("Error, expresion del for solo puede ser aritmetica.")
+                exit(0)
             self.instgen.verificar(self.tabla)
         else:
             self.exp1.verificar(tabla)
             self.exp2.verificar(tabla)
             self.exp3.verificar(tabla)
+            if not(((self.exp2.tipo=="int" and self.exp3.tipo=="int") or (self.exp2.tipo=="iter" and self.exp3.tipo=="int")\
+             or (self.exp2.tipo=="int" and self.exp3.tipo=="iter") or (self.exp2.tipo=="iter" and self.exp3.tipo=="iter")) \
+             and (self.exp1.tipo==self.exp2.tipo or self.exp1.tipo==self.exp2.tipo)):
+                print("Error, expresiones del for solo puede ser aritmetica.")
+                exit(0)
             self.instgen.verificar(self.tabla)
 
     def linkear_tablas(self,link):
         if self.tam >6:
             copia = link.tabla.copy()
-            copia[self.identificador] = "iter"
+            copia[self.identificador] = ("iter",None)
             self.tabla = copia
             self.link = Nodo(link,copia)
             self.instgen.linkear_tablas(self.link)
@@ -246,6 +298,21 @@ class cINST:
         else:
             self.exp3.linkear_tablas(link)
             self.instgen.linkear_tablas(link)
+
+    def correr(self):
+        if self.tam==6:     #While
+            self.exp3.correr()
+            if self.exp3.valor:
+                self.instgen.correr()
+                self.correr()
+        elif self.tam==10:
+            self.exp2.correr()
+            self.exp3.correr()
+            self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.exp2.valor)
+            if self.tabla[self.identificador][1]<self.exp3.valor:
+                self.instgen.correr()
+                self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.tabla[self.identificador][1]+1)
+                #seguir
 
 #############################################################################
 #                               CONDICIONAL                                 #
@@ -273,6 +340,14 @@ class cCondicional:
         self.instgen.linkear_tablas(link)
         if not isinstance(self.other,str):
             self.other.linkear_tablas(link)
+
+    def correr(self):
+        self.guardia.correr()
+        if self.guardia.valor:
+            self.instgen.correr()
+        else:
+            if not isinstance(self.other,str):
+                self.other.correr()
 
 #############################################################################
 #                               ASIGNACIONES                                #
@@ -372,7 +447,7 @@ class cEntSal:
                 auxnodo = self.link
                 while(auxnodo!=None):
                     if auxnodo.tabla.__contains__(self.expr.expr):
-                        self.tipo = auxnodo.tabla[self.expr.expr]
+                        self.tipo = auxnodo.tabla[self.expr.expr][0]
                         break
                     else:
                         auxnodo = auxnodo.padre
@@ -417,6 +492,7 @@ class cExprBin:
         self.arr = [self.expr_izq,self.oper,self.expr_der]
         self.tabla = tabla
         self.tipo = None
+        self.valor = None
 
     # VERIFICACIONES
     def verificar(self,tabla):
@@ -426,7 +502,7 @@ class cExprBin:
             or isinstance(self.expr_izq.tipo,cMatriz) or isinstance(self.expr_der.tipo,cMatriz)):
             if self.oper in {"+","-","*","/","%"}:
                 if self.expr_der.tipo == "int" and self.expr_izq.tipo == "int" or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int")\
-                    or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
+                    or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter") or (self.expr_izq.tipo == "iter" and self.expr_der.tipo == "iter"):
                     self.tipo = "int"
                 else:
                     print("Error de tipo, "+self.expr_izq.tipo+" no es operable por "+self.oper+" con "+self.expr_der.tipo)
@@ -439,11 +515,8 @@ class cExprBin:
                     exit(0)
             elif self.oper in {"<",">","<=",">=","=","/=",}:
                 if (self.expr_der.tipo == "int" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "char" and self.expr_izq.tipo == "char")\
-                or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter"):
+                or (self.expr_der.tipo == "iter" and self.expr_izq.tipo == "int") or (self.expr_der.tipo == "int" and self.expr_izq.tipo == "iter") or (self.expr_izq.tipo == "iter" and self.expr_der.tipo == "iter"):
                     self.tipo = "bool"
-                else:
-                    print("Error de tipo, "+self.expr_izq.tipo+" no es comparable por "+self.oper+" con "+self.expr_der.tipo)
-                    exit(0)
             elif self.oper in {"::"}:
                 if isinstance(self.expr_der.tipo,cLitMat) and isinstance(self.expr_izq.tipo,cLitMat):
                     if self.expr_der.tipo.numDim == self.expr_izq.tipo.numDim and  self.expr_der.tipo.tipobase == self.expr_izq.tipo.tipobase: # Falta caso iter
@@ -458,18 +531,67 @@ class cExprBin:
                 else:    
                     if isinstance(self.expr_izq.tipo, cMatriz):
                         izq = self.expr_izq.tipo
+                    else:
+                        print("Error, usando operador :: sin matrices")
+                        exit(0)
                 
                 if isinstance(self.expr_der,cLitMat):
                         der = self.expr_der
                 else:  
                     if isinstance(self.expr_der.tipo, cMatriz):
                         der = elf.expr_der.tipo
+                    else:
+                        print("Error, usando operador :: sin matrices")
+                        exit(0)
+                if izq.numDim != der.numDim:
+
+
 
 
 
     def linkear_tablas(self,link):
         self.expr_izq.linkear_tablas(link)
         self.expr_der.linkear_tablas(link)
+
+    def correr(self):
+        if self.oper in {"+","-","*","/","%"}:
+            if self.oper=="+":
+                self.valor = self.expr_izq.valor + self.expr_der.valor
+            elif self.oper=="-":
+                self.valor = self.expr_izq.valor - self.expr_der.valor
+            elif self.oper=="*":
+                self.valor = self.expr_izq.valor * self.expr_der.valor
+            elif self.oper=="/":
+                if self.expr_der.valor!=0:
+                    self.valor = self.expr_izq.valor / self.expr_der.valor
+                else:
+                    print("Error no se puede dividir por 0")
+                    exit(0)
+             else:
+                if self.expr_der.valor!=0:
+                    self.valor = self.expr_izq.valor % self.expr_der.valor
+                else:
+                    print("Error no se puede dividir por 0, ni sacar modulo 0")
+                    exit(0)
+        elif self.oper in {"/\\","\\/"}:
+            if self.oper=="/\\":
+                self.valor = self.expr_izq.valor and self.expr_der.valor
+            else:
+                self.valor = self.expr_izq.valor or self.expr_der.valor
+        elif self.oper in {"<",">","<=",">=","=","/=",}:
+            if self.oper=="<":
+                self.valor = self.expr_izq.valor < self.expr_der.valor
+            elif self.oper==">":
+                self.valor = self.expr_izq.valor > self.expr_der.valor
+            elif slef.oper=="<=":
+                self.valor = self.expr_izq.valor <= self.expr_der.valor
+            elif self.oper==">=":
+                self.valor = self.expr_izq.valor >= self.expr_der.valor
+            elif self.oper=="=":
+                self.valor = self.expr_izq.valor = self.expr_der.valor
+            else:
+                self.valor = self.expr_izq.valor != self.expr_der.valor
+        #Y MATRICES
 
 #############################################################################
 #                           EXPRESIONES UNARIAS                             #
@@ -484,6 +606,7 @@ class cExprUn:
         self.tabla = tabla
         self.tam = tam
         self.link = None
+        self.valor = None
 
     # VERIFICACIONES
     def verificar(self,tabla):
@@ -492,10 +615,13 @@ class cExprUn:
             if isinstance(self.expr,str) and self.oper == None:
                 if self.expr.isnumeric():
                     self.tipo = "int"
+                    self.valor = int(self.expr)
                 elif self.expr[0] == '\'':  
                     self.tipo = "char"
+                    self.valor = str(self.expr[1])
                 elif self.expr == "True" or self.expr == "False":
                     self.tipo = "bool"
+                    self.valor = self.expr=="True"
                 else:
                     #if tabla.__contains__(self.expr):
                     #    self.tipo = tabla[self.expr]
@@ -503,7 +629,8 @@ class cExprUn:
                     auxnodo = self.link
                     while(auxnodo!=None):
                         if auxnodo.tabla.__contains__(self.expr):
-                            self.tipo = auxnodo.tabla[self.expr]
+                            self.tipo = auxnodo.tabla[self.expr][0]
+                            self.valor = auxnodo.tabla[self.expr][1]
                             break
                         else:
                             auxnodo = auxnodo.padre
@@ -518,25 +645,32 @@ class cExprUn:
             self.expr.verificar(tabla)
             if self.oper=="-":
                 if self.expr.tipo == "int" or self.expr.tipo == "iter" :
-                    self.tipo = "int" 
+                    self.tipo = "int"
+                    self.valor = -self.expr.valor
                 else:
                     print("Error de tipo, operando "+self.expr.tipo+" como int.")
                     exit(0)
             elif self.oper=="#":  
                 if self.expr.tipo == "char":
                     self.tipo = "int" 
+                    self.valor = ord(self.expr.valor)
                 else:
                     print("Error de tipo, operando "+self.expr.tipo+" como char.")
                     exit(0)
             elif self.oper=="not":
                 if self.expr.tipo == "bool":
-                    self.tipo = "bool" 
+                    self.tipo = "bool"
+                    self.valor = not self.expr.valor
                 else:
                     print("Error de tipo, operando "+self.expr.tipo+" como bool.")
                     exit(0)
             elif self.oper=="++" or self.oper=="--": 
                 if self.expr.tipo == "char":
                     self.tipo = "char" 
+                    if self.oper=="++":
+                        self.valor = chr(ord(self.expr.valor)+1)
+                    else:
+                        self.valor = chr(ord(self.expr.valor)-1)
                 else:
                   print("Error de tipo, operando "+self.expr.tipo+" como char.")
                   exit(0)
