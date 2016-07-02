@@ -215,9 +215,7 @@ class cList_Iden:
             self.lis_iden.correr()
         if self.expr!="":
             self.expr.correr()
-            print(self.expr.valor)
             self.tabla[self.ident] = (self.tabla[self.ident][0],self.expr.valor)
-            print(self.link.tabla)
 
 
 #############################################################################
@@ -354,6 +352,7 @@ class cCondicional:
         self.guardia.linkear_tablas(link)
         self.instgen.linkear_tablas(link)
         if not isinstance(self.other,str):
+            print(self.other)
             self.other.linkear_tablas(link)
 
     def correr(self):
@@ -428,7 +427,10 @@ class cAsig:
 
     def correr(self):
         self.expr_izq.correr()
-        self.expr_der.correr()        
+        self.expr_der.correr()
+        if self.expr_der.valor==None:
+            print("Error asignando un valor sin asignar")
+            exit(0)        
         if isinstance(self.expr_izq,cExprUn):
             self.link.tabla[self.expr_izq.expr] = (self.link.tabla[self.expr_izq.expr][0],self.expr_der.valor)
 
@@ -522,8 +524,6 @@ class cEntSal:
                 auxnodo.tabla[self.expr.expr] = (auxnodo.tabla[self.expr.expr][0],aux)
         else:
             if self.expr.valor!=None:
-                print(self.link.tabla)
-                print(self.expr.valor)
                 print(self.expr.valor)
             else:
                 print("Error variable sin inicializar")
@@ -656,12 +656,12 @@ class cExprBin:
                 self.valor = self.expr_izq.valor < self.expr_der.valor
             elif self.oper==">":
                 self.valor = self.expr_izq.valor > self.expr_der.valor
-            elif slef.oper=="<=":
+            elif self.oper=="<=":
                 self.valor = self.expr_izq.valor <= self.expr_der.valor
             elif self.oper==">=":
                 self.valor = self.expr_izq.valor >= self.expr_der.valor
             elif self.oper=="=":
-                self.valor = self.expr_izq.valor = self.expr_der.valor
+                self.valor = self.expr_izq.valor == self.expr_der.valor
             else:
                 self.valor = self.expr_izq.valor != self.expr_der.valor
         #Y MATRICES
@@ -816,8 +816,7 @@ class cExprUn:
         else:                       # Caso parentesis.
             self.expr.correr()
             self.valor = self.expr.valor
-        print(self.valor)
-
+        
 #############################################################################
 #                           LITERALES DE MATRICES                           #
 #############################################################################
