@@ -314,11 +314,10 @@ class cINST:
             self.exp2.correr()
             self.exp3.correr()
             self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.exp2.valor)
-            if self.tabla[self.identificador][1]<self.exp3.valor:
+            while self.tabla[self.identificador][1]<self.exp3.valor:
                 self.instgen.correr()
                 print("For",self.tabla)
                 self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.tabla[self.identificador][1]+1)
-                self.correr()
         else:
             self.exp1.correr()
             self.exp2.correr()
@@ -453,7 +452,7 @@ class cIncAlc:
         self.alc.linkear_tablas(link)
 
     def correr(self):
-        self.param.correr()
+        self.alc.correr()
 
 #############################################################################
 #                               ENTRADA SALIDA                              #
@@ -522,11 +521,11 @@ class cEntSal:
                             exit(0)
                 auxnodo.tabla[self.expr.expr] = (auxnodo.tabla[self.expr.expr][0],aux)
         else:
-            if self.expr.valor:
+            if self.expr.valor!=None:
+                print(self.link.tabla)
+                print(self.expr.valor)
                 print(self.expr.valor)
             else:
-                print(self.link.tabla)
-                print(self.expr.expr)
                 print("Error variable sin inicializar")
                 exit(0)
 
