@@ -38,7 +38,7 @@ def p_LIST_DEC(p):
         for ident in p[2].lista:                        # Obtenemos la lista de identificadores
             if not p[0].tabla.__contains__(ident[0]):   # Si el elemento no esta, entonces verificamos el tipo
                 if ident[1]==p[4] or ident[1]=="":                      # Si el tipo es el correcto, entonces lo agregamos a la tabla
-                    p[0].tabla[ident[0]] = p[4]         # Agregamos el elemento a la tabla con el tipo correspondiente.
+                    p[0].tabla[ident[0]] = (p[4],None)         # Agregamos el elemento a la tabla con el tipo correspondiente.
                 else:
                     print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[4])+" pero se le asigno "+str(ident[1]))
                     exit(0)
@@ -51,7 +51,7 @@ def p_LIST_DEC(p):
         for ident in p[3].lista:                        # Obtenemos la lista de identificadores
             if not p[0].tabla.__contains__(ident[0]):   # Si el elemento no esta, entonces verificamos el tipo
                 if ident[1]==p[5] or ident[1]=="":      # Si el tipo es el correcto, entonces lo agregamos a la tabla
-                    p[0].tabla[ident[0]] = p[5]         # Agregamos el elemento a la tabla con el tipo correspondiente.
+                    p[0].tabla[ident[0]] = (p[5],None)  # Agregamos el elemento a la tabla con el tipo correspondiente y valor None.
                 else:
                     print("Error de tipo: "+str(ident[0])+" de tipo "+str(p[5])+" pero se le asigno "+str(ident[1]))
                     exit(0)
@@ -149,8 +149,11 @@ class cAuxcond:
     def verificar(self,tabla):
         self.instgen.verificar(tabla)
 
-    def linkear_tablas(self):
+    def linkear_tablas(self,link):
         self.instgen.linkear_tablas(link)
+
+    def correr(self):
+        self.instgen.correr()
 
 def p_AUXCOND(p):
     '''AUXCOND : TkEnd
@@ -254,8 +257,8 @@ def p_LITMAT(p):
             p[0].numDim = 1 + p[2].numDim
             p[0].tipobase = p[2].tipobase 
         else:
-            p[0].tipobase = p[2].tipo
             p[0].numDim = 1
+            p[0].tipobase = p[2].tipo
 
 def p_AUXLITMAT(p):
     '''AUXLITMAT : EXPR TkComa AUXLITMAT
@@ -334,7 +337,9 @@ def imprimir(result,i):
                             imprimir(elem,i+2)
 result.linkear_tablas(None)
 result.verificar()
-print(result.tabla)
+a_print(sal)
+print("###PROGRAMA###")
+result.correr()
 #print(result.instgen.instgen.alc.instgen.instgen.tabla,"lol")
 try:
     imprimir(result,0)
