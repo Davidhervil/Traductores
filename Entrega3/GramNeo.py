@@ -317,7 +317,6 @@ class cINST:
             self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.exp2.valor)
             while self.tabla[self.identificador][1]<self.exp3.valor:
                 self.instgen.correr()
-                print("For",self.tabla)
                 self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.tabla[self.identificador][1]+1)
         else:
             self.exp1.correr()
@@ -354,7 +353,6 @@ class cCondicional:
         self.guardia.linkear_tablas(link)
         self.instgen.linkear_tablas(link)
         if not isinstance(self.other,str):
-            print(self.other)
             self.other.linkear_tablas(link)
 
     def correr(self):
