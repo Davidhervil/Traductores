@@ -105,7 +105,7 @@ class cMatriz:
         self.numDim = 0
         self.tipobase = None
         self.card_dim = 0
-        self.tamaños = []
+        self.tamanos = []
 
 
     def linkear_tablas(self,link):
@@ -125,9 +125,9 @@ class cMatriz:
     def correr(self):
         self.dim.correr()
         if isinstance(self.dim,cDim):
-            self.tamaños = self.dim.tamaños
+            self.tamanos = self.dim.tamanos
         else:
-            self.tamaños.append(self.dim.valor)
+            self.tamanos.append(self.dim.valor)
         if isinstance(self.tipo,cMatriz):
             self.tipo.correr()
 #############################################################################
@@ -141,7 +141,7 @@ class cDim:                             # ARREGLAR ESTO PARA DIMENSIONES CHEVERO
         self.arr = [self.dim,self.expr]
         self.numDim = 0
         self.card_dim = 0
-        self.tamaños = []
+        self.tamanos = []
 
     def linkear_tablas(self,link):
         if self.dim:                        # Si hay dimension
@@ -160,10 +160,10 @@ class cDim:                             # ARREGLAR ESTO PARA DIMENSIONES CHEVERO
         self.dim.correr()
         self.expr.correr()
         if isinstance(self.dim, cDim):
-            self.tamaños = self.dim.tamaños.copy()
+            self.tamanos = self.dim.tamanos.copy()
         else:
-            self.tamaños.append(self.dim.valor)
-        self.tamaños.append(self.expr.valor)
+            self.tamanos.append(self.dim.valor)
+        self.tamanos.append(self.expr.valor)
 
 #############################################################################
 #                           LISTA DE IDENTIFICADORES                        #
