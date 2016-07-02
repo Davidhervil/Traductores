@@ -624,6 +624,9 @@ class cExprBin:
     def correr(self):
         self.expr_izq.correr()
         self.expr_der.correr()
+        if self.expr_izq.valor==None or self.expr_der.valor==None:
+            print("No se puede operar sin inicializar")
+            exit(0)
         if self.oper in {"+","-","*","/","%"}:
             if self.oper=="+":
                 self.valor = self.expr_izq.valor + self.expr_der.valor
@@ -771,43 +774,43 @@ class cExprUn:
                     if auxnodo==None:
                         print("Error, "+str(self.expr)+" no fue declarada")
                         exit(0)
-                    if self.valor==None:
-                        print(auxnodo.tabla)
-                        print("Error variable "+self.expr+" no esta inicializada")
-                        exit(0)
             #elif isinstance(self.expr,cLitMat):#literal de matriz
             
 
         # CASO UNARIOS
         elif self.tam == 3:
             self.expr.correr(tabla)
-            if self.oper=="-":
-                if self.expr.tipo == "int" or self.expr.tipo == "iter" :
-                    self.valor = -self.expr.valor
-                else:
-                    print("Error de tipo, operando "+self.expr.tipo+" como int.")
-                    exit(0)
-            elif self.oper=="#":  
-                if self.expr.tipo == "char":
-                    self.valor = ord(self.expr.valor)
-                else:
-                    print("Error de tipo, operando "+self.expr.tipo+" como char.")
-                    exit(0)
-            elif self.oper=="not":
-                if self.expr.tipo == "bool":
-                    self.valor = not self.expr.valor
-                else:
-                    print("Error de tipo, operando "+self.expr.tipo+" como bool.")
-                    exit(0)
-            elif self.oper=="++" or self.oper=="--": 
-                if self.expr.tipo == "char":
-                    if self.oper=="++":
-                        self.valor = chr(ord(self.expr.valor)+1)
+            if self.expr.valor!=None:
+                if self.oper=="-":
+                    if self.expr.tipo == "int" or self.expr.tipo == "iter" :
+                        self.valor = -self.expr.valor
                     else:
-                        self.valor = chr(ord(self.expr.valor)-1)
-                else:
-                  print("Error de tipo, operando "+self.expr.tipo+" como char.")
-                  exit(0)
+                        print("Error de tipo, operando "+self.expr.tipo+" como int.")
+                        exit(0)
+                elif self.oper=="#":  
+                    if self.expr.tipo == "char":
+                        self.valor = ord(self.expr.valor)
+                    else:
+                        print("Error de tipo, operando "+self.expr.tipo+" como char.")
+                        exit(0)
+                elif self.oper=="not":
+                    if self.expr.tipo == "bool":
+                        self.valor = not self.expr.valor
+                    else:
+                        print("Error de tipo, operando "+self.expr.tipo+" como bool.")
+                        exit(0)
+                elif self.oper=="++" or self.oper=="--": 
+                    if self.expr.tipo == "char":
+                        if self.oper=="++":
+                            self.valor = chr(ord(self.expr.valor)+1)
+                        else:
+                            self.valor = chr(ord(self.expr.valor)-1)
+                    else:
+                      print("Error de tipo, operando "+self.expr.tipo+" como char.")
+                      exit(0)
+            else:
+                print("Error variable no inicializada")
+                exit(0)
         
         # CASO PARENTESIS.
         else:                       # Caso parentesis.
