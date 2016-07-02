@@ -178,6 +178,7 @@ class cList_Iden:
         self.lista = []
         self.tabla = tabla
         self.tam = tam
+        self.link = None
     # VERIFICACIONES  
     def verificar(self,tabla):
         # Si tiene lista de identificadores no es vacia.
@@ -186,17 +187,17 @@ class cList_Iden:
         if self.expr!="":
             self.expr.verificar(tabla)
             if not isinstance(self.expr.expr,cLitMat):
-                if self.expr.tipo != tabla[self.ident]:
+                if self.expr.tipo != tabla[self.ident][0]:
                     print("Error de tipo: "+str(self.ident)+" de tipo "\
-                    +str(tabla[self.ident])+" pero se le asigno "+str(self.expr.tipo))
+                    +str(tabla[self.ident][0])+" pero se le asigno "+str(self.expr.tipo))
                     exit(0)
             else:
-                if not (self.expr.tipo.numDim == tabla[self.ident].numDim and \
-                    (self.expr.tipo.tipobase==tabla[self.ident].tipobase\
+                if not (self.expr.tipo.numDim == tabla[self.ident][0].numDim and \
+                    (self.expr.tipo.tipobase==tabla[self.ident][0].tipobase\
                     or self.expr.tipo.tipobase=="vacio")):
                     print("Error de tipo: "+str(self.ident)+" de tipo Matriz de "\
-                        +str(tabla[self.ident].numDim)+" dimensiones y tipo base "\
-                        +str(tabla[self.ident].tipobase)+\
+                        +str(tabla[self.ident][0].numDim)+" dimensiones y tipo base "\
+                        +str(tabla[self.ident][0].tipobase)+\
                         ", \pero se le asigno Matriz de " + str(self.expr.tipo.numDim)\
                         +" dimensiones y tipo base " + str(self.expr.tipo.tipobase))
                     exit(0)
@@ -207,13 +208,17 @@ class cList_Iden:
         if self.expr!="":
             self.expr.linkear_tablas(link)
         self.tabla = link.tabla
+        self.link = link
 
     def correr(self):
-        if self.list_iden:
-            self.list_iden.correr()
+        if self.lis_iden:
+            self.lis_iden.correr()
         if self.expr!="":
             self.expr.correr()
+            print(self.expr.valor)
             self.tabla[self.ident] = (self.tabla[self.ident][0],self.expr.valor)
+            print(self.link.tabla)
+
 
 #############################################################################
 #                           OPERACION DE ASIGNACION                         #
@@ -283,7 +288,7 @@ class cINST:
 
     def linkear_tablas(self,link):
         if self.tam >6:
-            copia = link.tabla.copy()
+            copia = {}
             copia[self.identificador] = ("iter",None)
             self.tabla = copia
             self.link = Nodo(link,copia)
@@ -302,17 +307,28 @@ class cINST:
     def correr(self):
         if self.tam==6:     #While
             self.exp3.correr()
-            if self.exp3.valor:
+            while self.exp3.valor:
                 self.instgen.correr()
-                self.correr()
+
         elif self.tam==10:
             self.exp2.correr()
             self.exp3.correr()
             self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.exp2.valor)
             if self.tabla[self.identificador][1]<self.exp3.valor:
                 self.instgen.correr()
+                print("For",self.tabla)
                 self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.tabla[self.identificador][1]+1)
-                #seguir
+                self.correr()
+        else:
+            self.exp1.correr()
+            self.exp2.correr()
+            self.exp3.correr()
+            self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.exp1.valor)
+            if self.tabla[self.identificador][1]<self.exp2.valor:
+                self.instgen.correr()
+                self.tabla[self.identificador] = (self.tabla[self.identificador][0],\
+                    self.tabla[self.identificador][1]+self.exp3.valor)
+                self.correr()
 
 #############################################################################
 #                               CONDICIONAL                                 #
@@ -358,6 +374,7 @@ class cAsig:
         self.expr_izq= expr_izq
         self.expr_der = expr_der
         self.arr = [self.expr_izq,self.expr_der]
+        self.link = None
     # VERIFICACIONES  
     def verificar(self,tabla):
         self.expr_izq.verificar(tabla)
@@ -406,8 +423,17 @@ class cAsig:
                     exit(0)
     
     def linkear_tablas(self,link):
+        self.link = link
         self.expr_izq.linkear_tablas(link)
         self.expr_der.linkear_tablas(link)
+
+    def correr(self):
+        self.expr_izq.correr()
+        self.expr_der.correr()        
+        if isinstance(self.expr_izq,cExprUn):
+            self.link.tabla[self.expr_izq.expr] = (self.link.tabla[self.expr_izq.expr][0],self.expr_der.valor)
+
+        #falta matrices
 
 #############################################################################
 #                           INCORPORACION DE ALCANCE                        #
@@ -425,6 +451,9 @@ class cIncAlc:
 
     def linkear_tablas(self,link):
         self.alc.linkear_tablas(link)
+
+    def correr(self):
+        self.param.correr()
 
 #############################################################################
 #                               ENTRADA SALIDA                              #
@@ -461,6 +490,47 @@ class cEntSal:
         self.link = link
         self.expr.linkear_tablas(link)
 
+    def correr(self):
+        self.expr.correr()
+        if self.io == "read": #INCOMPLETO FALTA INDEXACION
+            if isinstance(self.expr,cExprUn):
+                auxnodo = self.link
+                if not self.link.tabla.__contains__(self.expr.expr):
+                    while(auxnodo!=None):
+                        if auxnodo.tabla.__contains__(self.expr.expr):
+                            break
+                        else:
+                            auxnodo = auxnodo.padre
+                aux = input()
+                if aux.isnumeric():
+                    aux = int(aux)
+                    if auxnodo.tabla[self.expr.expr][0]!="int":
+                        print("Error, leyendo int en "+str(auxnodo.tabla[self.expr.expr][0]))
+                        exit(0)
+                else:
+                    if aux=="True" or aux=="False":
+                        aux = aux=="True"
+                        if auxnodo.tabla[self.expr.expr][0]!="bool":
+                            print("Error, leyendo bool en "+str(auxnodo.tabla[self.expr.expr][0]))
+                            exit(0)
+                    else:
+                        if len(aux)!=1:
+                            print("Error entrada muy larga")
+                            exit(0)
+                        if auxnodo.tabla[self.expr.expr][0]!="char":
+                            print("Error, leyendo bool en "+str(auxnodo.tabla[self.expr.expr][0]))
+                            exit(0)
+                auxnodo.tabla[self.expr.expr] = (auxnodo.tabla[self.expr.expr][0],aux)
+        else:
+            if self.expr.valor:
+                print(self.expr.valor)
+            else:
+                print(self.link.tabla)
+                print(self.expr.expr)
+                print("Error variable sin inicializar")
+                exit(0)
+
+
 #############################################################################
 #                               SECUENCIACION                               #
 #############################################################################             
@@ -480,6 +550,9 @@ class cSecu:
         self.instgen.linkear_tablas(link)
         self.inst.linkear_tablas(link)
 
+    def correr(self):
+        self.instgen.correr()
+        self.inst.correr()        
 #############################################################################
 #                           EXPRESIONES BINARIAS                            #
 #############################################################################
@@ -543,17 +616,15 @@ class cExprBin:
                     else:
                         print("Error, usando operador :: sin matrices")
                         exit(0)
-                if izq.numDim != der.numDim:
-
-
-
-
+                #if izq.numDim != der.numDim:
 
     def linkear_tablas(self,link):
         self.expr_izq.linkear_tablas(link)
         self.expr_der.linkear_tablas(link)
 
     def correr(self):
+        self.expr_izq.correr()
+        self.expr_der.correr()
         if self.oper in {"+","-","*","/","%"}:
             if self.oper=="+":
                 self.valor = self.expr_izq.valor + self.expr_der.valor
@@ -567,7 +638,7 @@ class cExprBin:
                 else:
                     print("Error no se puede dividir por 0")
                     exit(0)
-             else:
+            else:
                 if self.expr_der.valor!=0:
                     self.valor = self.expr_izq.valor % self.expr_der.valor
                 else:
@@ -615,13 +686,13 @@ class cExprUn:
             if isinstance(self.expr,str) and self.oper == None:
                 if self.expr.isnumeric():
                     self.tipo = "int"
-                    self.valor = int(self.expr)
+
                 elif self.expr[0] == '\'':  
                     self.tipo = "char"
-                    self.valor = str(self.expr[1])
+
                 elif self.expr == "True" or self.expr == "False":
                     self.tipo = "bool"
-                    self.valor = self.expr=="True"
+
                 else:
                     #if tabla.__contains__(self.expr):
                     #    self.tipo = tabla[self.expr]
@@ -630,7 +701,6 @@ class cExprUn:
                     while(auxnodo!=None):
                         if auxnodo.tabla.__contains__(self.expr):
                             self.tipo = auxnodo.tabla[self.expr][0]
-                            self.valor = auxnodo.tabla[self.expr][1]
                             break
                         else:
                             auxnodo = auxnodo.padre
@@ -646,31 +716,24 @@ class cExprUn:
             if self.oper=="-":
                 if self.expr.tipo == "int" or self.expr.tipo == "iter" :
                     self.tipo = "int"
-                    self.valor = -self.expr.valor
                 else:
                     print("Error de tipo, operando "+self.expr.tipo+" como int.")
                     exit(0)
             elif self.oper=="#":  
                 if self.expr.tipo == "char":
                     self.tipo = "int" 
-                    self.valor = ord(self.expr.valor)
                 else:
                     print("Error de tipo, operando "+self.expr.tipo+" como char.")
                     exit(0)
             elif self.oper=="not":
                 if self.expr.tipo == "bool":
                     self.tipo = "bool"
-                    self.valor = not self.expr.valor
                 else:
                     print("Error de tipo, operando "+self.expr.tipo+" como bool.")
                     exit(0)
             elif self.oper=="++" or self.oper=="--": 
                 if self.expr.tipo == "char":
                     self.tipo = "char" 
-                    if self.oper=="++":
-                        self.valor = chr(ord(self.expr.valor)+1)
-                    else:
-                        self.valor = chr(ord(self.expr.valor)-1)
                 else:
                   print("Error de tipo, operando "+self.expr.tipo+" como char.")
                   exit(0)
@@ -684,6 +747,74 @@ class cExprUn:
         self.link = link
         if not isinstance(self.expr,str):
             self.expr.linkear_tablas(link)
+
+    def correr(self):
+        if self.tam == 2:           # Caso literales o TkId
+            if isinstance(self.expr,str) and self.oper == None:
+                if self.expr.isnumeric():
+                    self.valor = int(self.expr)
+                elif self.expr[0] == '\'':  
+                    self.valor = str(self.expr[1])
+                elif self.expr == "True" or self.expr == "False":
+                    self.tipo = "bool"
+                    self.valor = self.expr=="True"
+                else:
+                    #if tabla.__contains__(self.expr):
+                    #    self.tipo = tabla[self.expr]
+                    #else:
+                    auxnodo = self.link
+                    while(auxnodo!=None):
+                        if auxnodo.tabla.__contains__(self.expr):
+                            self.valor = auxnodo.tabla[self.expr][1]
+                            break
+                        else:
+                            auxnodo = auxnodo.padre
+                    if auxnodo==None:
+                        print("Error, "+str(self.expr)+" no fue declarada")
+                        exit(0)
+                    if self.valor==None:
+                        print(auxnodo.tabla)
+                        print("Error variable "+self.expr+" no esta inicializada")
+                        exit(0)
+            #elif isinstance(self.expr,cLitMat):#literal de matriz
+            
+
+        # CASO UNARIOS
+        elif self.tam == 3:
+            self.expr.correr(tabla)
+            if self.oper=="-":
+                if self.expr.tipo == "int" or self.expr.tipo == "iter" :
+                    self.valor = -self.expr.valor
+                else:
+                    print("Error de tipo, operando "+self.expr.tipo+" como int.")
+                    exit(0)
+            elif self.oper=="#":  
+                if self.expr.tipo == "char":
+                    self.valor = ord(self.expr.valor)
+                else:
+                    print("Error de tipo, operando "+self.expr.tipo+" como char.")
+                    exit(0)
+            elif self.oper=="not":
+                if self.expr.tipo == "bool":
+                    self.valor = not self.expr.valor
+                else:
+                    print("Error de tipo, operando "+self.expr.tipo+" como bool.")
+                    exit(0)
+            elif self.oper=="++" or self.oper=="--": 
+                if self.expr.tipo == "char":
+                    if self.oper=="++":
+                        self.valor = chr(ord(self.expr.valor)+1)
+                    else:
+                        self.valor = chr(ord(self.expr.valor)-1)
+                else:
+                  print("Error de tipo, operando "+self.expr.tipo+" como char.")
+                  exit(0)
+        
+        # CASO PARENTESIS.
+        else:                       # Caso parentesis.
+            self.expr.correr()
+            self.valor = self.expr.valor
+        print(self.valor)
 
 #############################################################################
 #                           LITERALES DE MATRICES                           #
