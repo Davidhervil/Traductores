@@ -503,7 +503,7 @@ class cEntSal:
                         else:
                             auxnodo = auxnodo.padre
                 aux = input()
-                if aux.isnumeric():
+                if aux.isnumeric() and self.expr.tipo=="int":
                     aux = int(aux)
                     if auxnodo.tabla[self.expr.expr][0]!="int":
                         print("Error, leyendo int en "+str(auxnodo.tabla[self.expr.expr][0]))
@@ -519,7 +519,7 @@ class cEntSal:
                             print("Error entrada muy larga")
                             exit(0)
                         if auxnodo.tabla[self.expr.expr][0]!="char":
-                            print("Error, leyendo bool en "+str(auxnodo.tabla[self.expr.expr][0]))
+                            print("Error, leyendo char en "+str(auxnodo.tabla[self.expr.expr][0]))
                             exit(0)
                 auxnodo.tabla[self.expr.expr] = (auxnodo.tabla[self.expr.expr][0],aux)
         else:
@@ -779,7 +779,7 @@ class cExprUn:
 
         # CASO UNARIOS
         elif self.tam == 3:
-            self.expr.correr(tabla)
+            self.expr.correr()
             if self.expr.valor!=None:
                 if self.oper=="-":
                     if self.expr.tipo == "int" or self.expr.tipo == "iter" :
