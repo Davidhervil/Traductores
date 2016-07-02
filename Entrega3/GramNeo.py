@@ -321,11 +321,10 @@ class cINST:
             self.exp2.correr()
             self.exp3.correr()
             self.tabla[self.identificador] = (self.tabla[self.identificador][0],self.exp1.valor)
-            if self.tabla[self.identificador][1]<self.exp2.valor:
+            while self.tabla[self.identificador][1]<self.exp2.valor:
                 self.instgen.correr()
                 self.tabla[self.identificador] = (self.tabla[self.identificador][0],\
                     self.tabla[self.identificador][1]+self.exp3.valor)
-                self.correr()
 
 #############################################################################
 #                               CONDICIONAL                                 #
