@@ -243,7 +243,9 @@ class cOpasig:
     def correr(self):
         self.expr.correr()
         self.valor = self.expr.valor
-
+        if self.valor == None:
+            print("Error, esta exprsion de inicializacion contiene variable sin incializar")
+            exit(0)
 #############################################################################
 #                               INSTRUCCIONES                               #
 #############################################################################
@@ -307,6 +309,7 @@ class cINST:
             self.exp3.correr()
             while self.exp3.valor:
                 self.instgen.correr()
+                self.exp3.correr()
 
         elif self.tam==10:
             self.exp2.correr()
